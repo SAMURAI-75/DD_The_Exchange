@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Block Bros: Creeper Kingdom</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0b14;overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center}
+  canvas{image-rendering:pixelated;image-rendering:crisp-edges;background:#5c94fc;
+    width:min(100vw, calc(100vh * 960 / 544));height:auto;aspect-ratio:960/544;
+    box-shadow:0 0 40px rgba(0,0,0,.6);outline:none}
+  noscript{color:#fff;font:16px monospace}
+</style>
+</head>
+<body>
+<canvas id="game" width="960" height="544" tabindex="0" aria-label="Block Bros game canvas"></canvas>
+<noscript>This game needs JavaScript enabled.</noscript>
+<script src="game.js"></script>
+</body>
+</html>
