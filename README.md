@@ -8,7 +8,7 @@ No install and no build step. Pick one:
 - Double-click `index.html`, **or**
 - `python3 -m http.server 8000`, then open http://localhost:8000
 
-Works offline. All art and sound are generated in code (`game.js`).
+Works offline. All art, sound effects and the music (original chiptune, one track per world) are generated in code (`game.js`).
 
 ## Controls
 
@@ -18,9 +18,22 @@ Works offline. All art and sound are generated in code (`game.js`).
 | Jump | W or Space | ↑ |
 | Sword | F | Enter (or /) |
 | Shield (hold) | S | ↓ |
-| Fireball (with Fire power) | G | Right Shift (or .) |
+| Fireball (Fire power) / Gun (Crazy) | G | Right Shift (or .) |
+| Sticky bomb (Crazy only) | E | ' (quote) or \ |
 
-P / Esc to pause · M to mute · on the title screen: 1 / 2 players, ← / → difficulty, Enter to start.
+P / Esc to pause · M to mute. On the **world select screen**: ← / → world, ↑ / ↓ mode, 1 / 2 players, Enter to start.
+
+## Worlds
+
+| World | Difficulty | What's there |
+|---|---|---|
+| Overworld | ★☆☆ Easy | 2 levels + the Ghost Miner boss. Zombies, creepers, skeletons |
+| The Nether | ★★☆ Medium | Lava pits, lava-fall background, ghasts (swing to send fireballs back), blazes |
+| The End | ★★★ Hard | The Ender Dragon circles, breathes and swoops. Smash the 3 end crystals that heal it |
+
+## Modes
+
+Easy · Normal · Hard (shields spawn damaged) · **CRAZY**: automatic gun, sticky bombs, 9 lives and a horde of up to 15 mobs spawning nonstop.
 
 ## Features
 
@@ -29,7 +42,7 @@ P / Esc to pause · M to mute · on the title screen: 1 / 2 players, ← / → d
 - **Skeletons** stand still and shoot arrows that **knock you back**, even mid-jump. Swing your sword to deflect arrows.
 - **Sword shop** between levels: Wood → Stone → Iron → Diamond, bought with coins.
 - **Rare shields** in hard-to-reach spots. Hold to block. 100 durability: arrows −34 (3 break it), zombies −15, creepers −60. On **Hard**, shields spawn pre-damaged (5–40%).
-- **Power-ups** from ? blocks: Mushroom (+1 max heart), Fire flower (fireballs), Star (invincible, kills on touch).
+- **Power-ups** from ? blocks: Mushroom (grow big; a hit shrinks you instead of costing a heart), Fire flower (fireballs), Star (invincible, kills on touch).
 - **Stomp** mobs from above. Stomping a creeper lights its fuse, so run!
 - **2-player co-op** on one keyboard: shared lives, respawn next to your partner.
 - **Boss: the Ghost Miner** teleports, fires orbs, and summons mobs, over 3 phases.

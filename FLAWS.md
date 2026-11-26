@@ -45,6 +45,28 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 32 | Same level layout every run (fair, testable) | Seeded RNG (`mulberry`) for level generation | 🛡️ |
 | 33 | Window resize / small screens | Canvas scales to fit while keeping the aspect ratio, with pixelated rendering | 🛡️ |
 
+## Round 2 of building: new features and the bugs found while testing
+
+| # | Flaw | Fix | Status |
+|---|---|---|---|
+| 39 | **Platforms 4 blocks up were impossible to reach** (jump only reached ~3.5 blocks), reported by playtester | Jump raised from 650 to 760 px/s. Measured jump height is now 4.52 blocks; the tallest required step is 4 | ✅ tested |
+| 40 | Mushroom only added a heart; it should make you bigger | Mushroom grows you (bigger hitbox and sprite). A hit while big shrinks you instead of costing a heart | ✅ tested |
+| 41 | Growing under a low ceiling would trap you inside blocks | If there's no headroom, growth waits until there is (`wantBig`) | 🛡️ |
+| 42 | Ghast fireballs need a counter | Swing your sword at one to send it back (it turns blue). Tested: it reverses and can kill ghasts | ✅ tested |
+| 43 | Falling into a Nether lava pit should kill instantly (not after falling off-screen) | Feet below ground level in the Nether = lava death, with an ember burst. Mobs too | ✅ tested |
+| 44 | The dragon could be unkillable because crystals heal it | Crystals sit on 4-block pillars (reachable with the new jump). Sword, gun, fireball or bomb destroys them, and the HUD shows how many are healing it | ✅ tested |
+| 45 | The dragon could fly out of the arena or into the floor | Position clamped inside the walls and above the floor | 🛡️ |
+| 46 | Dragon/boss death left minions and projectiles behind | Everything is cleared when the boss dies, then the win screen shows | ✅ tested |
+| 47 | Crazy Mode horde spawning on top of players or on the safe pads | Spawns only off-screen, at least 4 blocks from any player, never on the spawn/checkpoint pads, never over pits | 🛡️ |
+| 48 | Crazy Mode horde too thin at first (about 7 mobs) | Spawn every 0.2 s with up to 4 placement attempts, capped at 15 near the camera | ✅ tested |
+| 49 | Sticky bombs: should stick to mobs and surfaces | They stick to the first mob or surface they touch and explode after 1.6 s (3-block blast that also lights creepers) | ✅ tested |
+| 50 | Bombs and reflected fireballs hurting the thrower's targets correctly | Player-owned shots (`mine`) only damage mobs. Blasts can still hurt players nearby (stand clear!) | 🛡️ design choice |
+| 51 | Sword also deleted the player's own bullets and bombs | Swords only deflect enemy projectiles | ✅ |
+| 52 | Music keeps playing on game over or while muted | Music scheduler stops when muted or on game over, and switches track by map/state | 🛡️ |
+| 53 | Best times mixed up between maps and modes | Stored per map and per mode (`bb_best_<map>_<mode>`) | 🛡️ |
+| 54 | Test-only hook (`window.__bb`) left in the build | Removed before commit | ✅ |
+| 55 | Game auto-pauses when the tab is hidden (looked like "stuck" during testing) | Intended. The game resumes with P/Esc | 🛡️ |
+
 ## Known limitations (honest list)
 
 | # | Limitation | Status |
@@ -53,4 +75,5 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 35 | The shield blocks from all directions (simpler, and more forgiving for players) | ⚠️ design choice |
 | 36 | Boss orbs pass through blocks on purpose (ghost) | ⚠️ design choice |
 | 37 | ? block contents are random each run, not seeded | ⚠️ |
-| 38 | Only 2 levels plus the boss | ⚠️ scope |
+| 38 | The Nether and the End have one level each (the End is a boss arena) | ⚠️ scope |
+| 56 | Music is simple generated chiptune, with no volume slider (M mutes everything) | ⚠️ |
