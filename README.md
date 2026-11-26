@@ -34,13 +34,13 @@
     python3 -m http.server 8000
     ```
     Then open http://localhost:8000 in your browser.
-- Press **Enter** on the title screen, pick a world, mode and number of players, and press **Enter** again to play.
+- Press **Enter** on the title screen, pick a world, mode and number of players, and press **Enter** again to play. Press **L** on the title screen to continue a saved run.
 
 ---
 
 ## More details
 
-Works offline. All art, sound effects and the music (original chiptune, one track per world) are generated in code (`game.js`).
+Works offline. Progress is saved in your browser: the home screen lists every level you've played with your best time, best points and number of plays. All art, sound effects and the music (original chiptune, one track per world) are generated in code (`game.js`).
 
 ### Controls
 

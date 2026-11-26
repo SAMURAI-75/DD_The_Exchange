@@ -378,6 +378,42 @@ const G = {
 };
 const bestKey = () => 'bb_best_' + G.map + '_' + DKEYS[G.diffIdx];
 
+// ---------- saved progress (browser localStorage) ----------
+const REC_KEY = 'bb_records', SAVE_KEY = 'bb_save', LEVEL_ORDER = [1, 2, 6, 3, 4, 7, 8, 5];
+const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : null); // ignore corrupted values
+function getRecords() { const r = store.get(REC_KEY, {}); return r && typeof r === 'object' && !Array.isArray(r) ? r : {}; }
+const teamScore = () => G.p.reduce((a, p) => a + (p.score || 0), 0);
+function recordLevel(n, cleared) {
+  const R = getRecords(), k = String(n), e = R[k] && typeof R[k] === 'object' ? R[k] : {};
+  e.plays = (num(e.plays) || 0) + (cleared ? 0 : 1);
+  if (cleared) {
+    const t = Math.max(0, G.time - (G.lvlStartT || 0)), pts = Math.max(0, teamScore() - (G.lvlStartPts || 0));
+    e.clears = (num(e.clears) || 0) + 1;
+    if (num(e.bestTime) == null || t < e.bestTime) e.bestTime = t;
+    if (num(e.bestPts) == null || pts > e.bestPts) e.bestPts = pts;
+    e.diff = G.diff.name;
+  }
+  e.last = Date.now(); R[k] = e; store.set(REC_KEY, R);
+}
+function saveRun() {
+  if (G.race) return;
+  store.set(SAVE_KEY, { map: G.map, li: G.li, diffIdx: G.diffIdx, players: G.players, coins: G.coins, sword: G.sword, lives: G.lives, time: G.time, scores: G.p.map(p => p.score || 0), ts: Date.now() });
+}
+function getSave() {
+  const v = store.get(SAVE_KEY, null);
+  if (!v || typeof v !== 'object' || !MAPS[v.map] || num(v.li) == null || !MAPS[v.map].levels[v.li] || !DKEYS[v.diffIdx] || (v.players !== 1 && v.players !== 2)) return null;
+  return v;
+}
+function continueRun() {
+  const v = getSave(); if (!v) return false;
+  G.map = v.map; G.diffIdx = v.diffIdx; G.players = v.players; G.race = false; G.diff = DIFF[DKEYS[G.diffIdx]];
+  G.p = [makePlayer(0)]; if (G.players === 2) G.p.push(makePlayer(1));
+  G.p.forEach((p, i) => { p.score = num(v.scores && v.scores[i]) || 0; p.lives = G.diff.lives; p.keys = 0; p.cp = null; p.finished = false; });
+  G.coins = Math.max(0, num(v.coins) || 0); G.sword = clamp(num(v.sword) || 0, 0, 3); G.lives = Math.max(1, num(v.lives) || 1);
+  G.time = Math.max(0, num(v.time) || 0); G.li = v.li; G.raceT = null; G.best = store.get(bestKey(), null);
+  loadLevel(MAPS[G.map].levels[G.li]); G.state = 'play'; banner('PROGRESS LOADED', 1.5);
+  return true;
+}
 function newGame() {
   G.diff = DIFF[DKEYS[G.diffIdx]];
   if (G.race) G.players = 2;
@@ -389,6 +425,8 @@ function newGame() {
   loadLevel(MAPS[G.map].levels[0]); G.state = 'play';
 }
 function loadLevel(n) {
+  G.lvlStartT = G.time; G.lvlStartPts = teamScore();
+  recordLevel(n, false);
   G.level = n; G.lvl = makeLevel(n); G.proj = []; G.parts = []; G.texts = []; G.cp = null; G.overT = 0;
   const boss = G.lvl.mobs.find(m => m.type === 'boss' || m.type === 'dragon');
   if (boss) { boss.hp = boss.maxhp = Math.round(G.diff.bossHp * (boss.type === 'dragon' ? 1.5 : 1)); }
@@ -401,6 +439,7 @@ function loadLevel(n) {
   });
   G.keys = 0; G.cam = 0; G.split = false; G.cams = null; G.viewL = 0; G.viewR = W;
   banner(LEVEL_NAME[n] || 'LEVEL ' + n);
+  saveRun();
   if (G.diff.crazy) setTimeout(() => banner('CRAZY MODE: GUNS + BOMBS!', 2), 1800);
 }
 function banner(text, t = 2) { G.msg = { text, t }; }
@@ -854,6 +893,7 @@ function smallBlast(x, y, r, kind, mine, by) {
   G.shake = Math.max(G.shake, 0.3); SFX.ghastFire();
 }
 function bossDefeated(b) {
+  recordLevel(G.level, true);
   for (let i = 0; i < 5; i++) burst(midX(b) + rand(-30, 30), midY(b) + rand(-30, 30), ['#b36bff', '#fff', '#ffd84a'][i % 3], 30, 400, 6);
   G.shake = 0.8; SFX.boom(); if (b.type === 'dragon') SFX.roar();
   G.lvl.mobs.forEach(m => { if (m !== b && !m.dead) { m.dead = true; burst(midX(m), midY(m), '#b36bff', 10, 200, 4); } });
@@ -926,10 +966,11 @@ function finishRace(p) {
   const bonus = place === 0 ? 1000 : 500, tb = Math.max(0, Math.round((240 - G.time) * 5));
   p.score = (p.score || 0) + bonus + tb; p.bonus = bonus + tb;
   SFX.clear(); banner(`P${p.id + 1} WINS THE RACE! +${bonus + tb}`, 2);
-  if (place === 0) G.raceT = 1.5; // first across the flag ends the race (short celebration, then results)
+  if (place === 0) { G.raceT = 1.5; recordLevel(G.level, true); } // first across the flag ends the race (short celebration, then results)
 }
 function levelClear() {
   if (G.state !== 'play') return;
+  recordLevel(G.level, true);
   G.state = 'clear'; G.timer = 2.2; G.coins += 10; SFX.clear(); banner('LEVEL CLEAR! +10', 2.2);
   alive().forEach(p => { p.score = (p.score || 0) + 500; });
 }
@@ -1028,7 +1069,11 @@ function update(dt) {
   if (G.msg) { G.msg.t -= dt; if (G.msg.t <= 0) G.msg = null; }
   setSong(G.state === 'title' || G.state === 'maps' ? 'title' : G.state === 'win' || G.state === 'results' ? 'win' : G.state === 'over' ? null
     : G.lvl ? { over: 'over', night: 'boss', nether: 'nether', end: 'end', cave: 'cave' }[G.lvl.theme] : 'title');
-  if (G.state === 'title') { if (hit1('Enter', 'Space', 'NumpadEnter')) { G.state = 'maps'; SFX.menu(); } return; }
+  if (G.state === 'title') {
+    if (hit1('KeyL') && continueRun()) return;
+    if (hit1('Enter', 'Space', 'NumpadEnter')) { G.state = 'maps'; SFX.menu(); }
+    return;
+  }
   if (G.state === 'maps') {
     const n = DKEYS.length;
     if (hit1('ArrowLeft', 'KeyA')) { G.map = (G.map + MAPS.length - 1) % MAPS.length; SFX.menu(); }
@@ -1092,7 +1137,7 @@ function update(dt) {
   if (G.state === 'clear') {
     G.timer -= dt;
     if (G.timer <= 0) {
-      if (G.li >= MAPS[G.map].levels.length - 1) { G.state = 'win'; if (G.best == null || G.time < G.best) { G.best = G.time; store.set(bestKey(), G.best); } }
+      if (G.li >= MAPS[G.map].levels.length - 1) { G.state = 'win'; store.set(SAVE_KEY, null); if (G.best == null || G.time < G.best) { G.best = G.time; store.set(bestKey(), G.best); } }
       else { G.state = 'shop'; G.shopSel = 0; }
     }
   } else if (G.race) {
@@ -1102,7 +1147,7 @@ function update(dt) {
       if (done || (G.raceT != null && G.raceT <= 0)) { G.state = 'results'; G.raceEnd = G.time; G.raceT = null; releaseAll(); SFX.clear(); }
     }
   } else if (G.p.every(p => p.dead) && G.lives <= 0 && G.p.every(p => p.respawn <= 0)) {
-    G.overT += dt; if (G.overT > 1.2) G.state = 'over';
+    G.overT += dt; if (G.overT > 1.2) { G.state = 'over'; store.set(SAVE_KEY, null); }
   }
 }
 
@@ -1476,23 +1521,41 @@ function drawTitle() {
   drawHero(fake, 180, H - 2 * T - 30); if (G.players === 2) drawHero({ ...fake, id: 1 }, 220, H - 2 * T - 30);
   text('BLOCK BROS', W / 2, 120 + Math.sin(t * 2) * 4, 64, '#ffd84a', 'center');
   text('CREEPER KINGDOM', W / 2, 165, 28, '#7fd650', 'center');
-  // CONTROLS GUIDE (reflects the WASD/ARROWS swap setting)
-  panel(W / 2 - 320, 182, 640, 300);
+  // CONTROLS GUIDE (left; reflects the WASD/ARROWS swap setting)
+  const L0 = 16;
+  panel(L0, 182, 484, 300);
   const c1 = CTRL[G.swap ? 1 : 0], c2 = CTRL[G.swap ? 0 : 1], kn = list => list.filter(k => KEYNAME[k]).map(k => KEYNAME[k]).join(' / ');
   const rows = [
     ['MOVE', kn(c1.l) + ' ' + kn(c1.r), kn(c2.l) + ' ' + kn(c2.r), ''],
-    ['JUMP', kn(c1.j), kn(c2.j), 'hold for higher; stomp mobs'],
+    ['JUMP', kn(c1.j), kn(c2.j), 'hold = higher; stomp'],
     ['CROUCH', kn(c1.c), kn(c2.c), 'duck under missiles'],
-    ['SWORD', kn(c1.a), kn(c2.a), 'deflects arrows/fireballs'],
-    ['SHIELD (hold)', kn(c1.s), kn(c2.s), 'blocks hits until it breaks'],
-    ['FIRE / GUN', kn(c1.f), kn(c2.f), 'fire flower / CRAZY gun'],
+    ['SWORD', kn(c1.a), kn(c2.a), 'deflects shots'],
+    ['SHIELD hold', kn(c1.s), kn(c2.s), 'blocks until it breaks'],
+    ['FIRE / GUN', kn(c1.f), kn(c2.f), 'flower / CRAZY gun'],
     ['STICKY BOMB', kn(c1.b), kn(c2.b), 'CRAZY mode only'],
   ];
-  text('CONTROLS', W / 2 - 300, 208, 14, '#ffd84a'); text('P1 (' + c1.name + ')', W / 2 - 130, 208, 13, '#ff9a9a'); text('P2 (' + c2.name + ')', W / 2 + 10, 208, 13, '#9af0a9');
-  rows.forEach((r, i) => { const y = 234 + i * 22; text(r[0], W / 2 - 300, y, 12, '#fff'); text(r[1], W / 2 - 130, y, 12, '#ffd0d0'); text(r[2], W / 2 + 10, y, 12, '#d0ffd8'); text(r[3], W / 2 + 140, y, 10, '#aaa'); });
-  text('P pause · M mute · swap P1/P2 keys with C on the world screen', W / 2, 402, 11, '#ccc', 'center');
-  text('Watch out: creepers blow up 6 blocks · cannons fire missiles · blocks regrow', W / 2, 420, 11, '#ccc', 'center');
-  if (Math.floor(t * 2) % 2) text('PRESS ENTER', W / 2, 462, 22, '#fff', 'center');
+  text('CONTROLS', L0 + 14, 208, 14, '#ffd84a'); text('P1 ' + c1.name, L0 + 120, 208, 12, '#ff9a9a'); text('P2 ' + c2.name, L0 + 222, 208, 12, '#9af0a9');
+  rows.forEach((r, i) => { const y = 234 + i * 22; text(r[0], L0 + 14, y, 11, '#fff'); text(r[1], L0 + 120, y, 11, '#ffd0d0'); text(r[2], L0 + 222, y, 11, '#d0ffd8'); text(r[3], L0 + 330, y, 10, '#aaa'); });
+  text('P pause · M mute · C on world screen swaps keys', L0 + 242, 402, 11, '#ccc', 'center');
+  text('creepers blow up blocks · blocks regrow in 15s', L0 + 242, 420, 11, '#ccc', 'center');
+  // PROGRESS LIST (right; saved in the browser)
+  const R0 = 512, recs = getRecords(), sv = getSave();
+  panel(R0, 182, 432, 300);
+  text('YOUR PROGRESS', R0 + 14, 208, 14, '#ffd84a'); text('BEST TIME', R0 + 250, 208, 10, '#aaa', 'right'); text('BEST PTS', R0 + 340, 208, 10, '#aaa', 'right'); text('PLAYS', R0 + 418, 208, 10, '#aaa', 'right');
+  let any = false;
+  LEVEL_ORDER.forEach((n, i) => {
+    const e = recs[String(n)] || {}, y = 230 + i * 20, plays = num(e.plays) || 0, clears = num(e.clears) || 0;
+    if (plays || clears) any = true;
+    const world = n === 4 || n === 7 ? '#ff8a5a' : n === 5 || n === 8 ? '#d7a6ff' : '#9fe07a';
+    text((clears ? '✓ ' : plays ? '· ' : '  ') + (LEVEL_NAME[n] || '').replace('BOSS: ', '').replace('THE END: SLAY THE DRAGON', 'ENDER DRAGON'), R0 + 14, y, 11, plays ? world : '#555');
+    text(num(e.bestTime) != null ? fmtTime(e.bestTime) : '--', R0 + 250, y, 11, '#fff', 'right');
+    text(num(e.bestPts) != null ? String(e.bestPts) : '--', R0 + 340, y, 11, '#ffd84a', 'right');
+    text(String(plays), R0 + 418, y, 11, '#ccc', 'right');
+  });
+  if (!any) text('No levels played yet. Your runs are saved here.', R0 + 216, 402, 11, '#aaa', 'center');
+  else text('✓ cleared   · played, not cleared yet', R0 + 216, 402, 10, '#aaa', 'center');
+  if (sv) text(`L: CONTINUE ${MAPS[sv.map].name} ${sv.li + 1}/${MAPS[sv.map].levels.length} (${DIFF[DKEYS[sv.diffIdx]].name})`, R0 + 216, 424, 12, '#7fe0ff', 'center');
+  if (Math.floor(t * 2) % 2) text(sv ? 'PRESS ENTER FOR NEW GAME' : 'PRESS ENTER', W / 2, 512, 20, '#fff', 'center');
 }
 function drawMaps() {
   drawTitle();

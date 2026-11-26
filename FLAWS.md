@@ -123,6 +123,15 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 |---|---|---|---|
 | 89 | **Drag race seemed frozen after the first player finished**, reported by playtester. The winner's half of the screen stood still during a 30 s wait for the other player | The race now **ends 1.5 s after the first player crosses the flag** and shows a results screen: winner (first across the flag), finish time, and both players' points. Keys are released so nothing carries over. Tested: no errors, results screen shown, the other player could still move until the end | ✅ tested |
 
+## Round 8: saved progress
+
+| # | Flaw | Fix | Status |
+|---|---|---|---|
+| 90 | Progress was lost on refresh | Saved in the browser (localStorage). **Per-level records**: plays, clears, best time, best points, difficulty. **Continue**: the run is saved at the start of every level (world, level, mode, players, coins, sword, lives, scores); press **L** on the title to resume. Tested: clear → records written → title → L resumes level 2 with score kept | ✅ tested |
+| 91 | Corrupted or hand-edited saved data could crash the title screen | Every saved value is type-checked (`num()`); bad entries show as "--", and an invalid save is ignored. Tested with garbage JSON: no errors | ✅ tested |
+| 92 | A finished or failed run left a stale "continue" | The save is cleared on win and on game over; race mode is never saved | 🛡️ |
+| 93 | localStorage blocked (private mode) | All reads and writes are wrapped in try/catch; the game still runs, just without saving | 🛡️ |
+
 ## Known limitations (honest list)
 
 | # | Limitation | Status |
