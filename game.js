@@ -1610,7 +1610,7 @@ function drawHUD() {
     if (p.dead) { text(p.respawn > 0 ? 'RESPAWNING...' : 'OUT', bx, 36, 14, '#aaa'); return; }
     for (let h = 0; h < p.maxhp; h++) heart(bx + h * 16, 22, h < p.hp);
     let ix = bx + p.maxhp * 16 + 8;
-    if (p.shield) { rect(ix, 24, 40, 8, '#333'); rect(ix, 24, 40 * p.shield.hp / 100, 8, p.shield.hp > 50 ? '#9fd3ff' : p.shield.hp > 25 ? '#ffd84a' : '#ff6b6b'); text('SHLD', ix, 20, 9, '#9fd3ff'); ix += 46; }
+    if (p.shield) { text('SH', ix, 33, 9, '#9fd3ff'); rect(ix + 16, 25, 40, 8, '#333'); rect(ix + 16, 25, 40 * p.shield.hp / 100, 8, p.shield.hp > 50 ? '#9fd3ff' : p.shield.hp > 25 ? '#ffd84a' : '#ff6b6b'); ix += 62; }
     if (p.power === 'fire') { text('FIRE', ix, 34, 11, '#ff9b3d'); ix += 34; }
     if (p.star > 0) text('STAR ' + Math.ceil(p.star), ix, 34, 11, '#ffe94a');
   });
@@ -1631,6 +1631,24 @@ function drawHUD() {
 }
 const fmtTime = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 function panel(x, y, w, h) { rect(x, y, w, h, 'rgba(10,10,30,.88)'); cx.strokeStyle = '#ffd84a'; cx.lineWidth = 3; cx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3); }
+// CONTROLS GUIDE (title screen + pause menu; reflects the WASD/ARROWS swap setting)
+function controlsPanel(L0, T0) {
+  panel(L0, T0, 484, 300);
+  const c1 = CTRL[G.swap ? 1 : 0], c2 = CTRL[G.swap ? 0 : 1], kn = list => list.filter(k => KEYNAME[k]).map(k => KEYNAME[k]).join(' / ');
+  const rows = [
+    ['MOVE', kn(c1.l) + ' ' + kn(c1.r), kn(c2.l) + ' ' + kn(c2.r), ''],
+    ['JUMP', kn(c1.j), kn(c2.j), 'hold = higher; stomp'],
+    ['CROUCH', kn(c1.c), kn(c2.c), 'duck under missiles'],
+    ['SWORD', kn(c1.a), kn(c2.a), 'deflects shots'],
+    ['SHIELD hold', kn(c1.s), kn(c2.s), 'blocks until it breaks'],
+    ['FIRE / GUN', kn(c1.f), kn(c2.f), 'flower / CRAZY gun'],
+    ['STICKY BOMB', kn(c1.b), kn(c2.b), 'CRAZY mode only'],
+  ];
+  text('CONTROLS', L0 + 14, T0 + 26, 14, '#ffd84a'); text('P1 ' + c1.name, L0 + 120, T0 + 26, 12, '#ff9a9a'); text('P2 ' + c2.name, L0 + 222, T0 + 26, 12, '#9af0a9');
+  rows.forEach((r, i) => { const y = T0 + 52 + i * 22; text(r[0], L0 + 14, y, 11, '#fff'); text(r[1], L0 + 120, y, 11, '#ffd0d0'); text(r[2], L0 + 222, y, 11, '#d0ffd8'); text(r[3], L0 + 330, y, 10, '#aaa'); });
+  text('P pause · M mute · C on world screen swaps keys', L0 + 242, T0 + 220, 11, '#ccc', 'center');
+  text('creepers blow up blocks · blocks regrow in 15s', L0 + 242, T0 + 238, 11, '#ccc', 'center');
+}
 function drawTitle() {
   drawBackground();
   for (let x = 0; x < W; x += T) { cx.drawImage(tileImg('#'), x, H - 2 * T); cx.drawImage(tileImg('X'), x, H - T); }
@@ -1642,23 +1660,7 @@ function drawTitle() {
   drawHero(fake, 180, H - 2 * T - 30); if (G.players === 2) drawHero({ ...fake, id: 1 }, 220, H - 2 * T - 30);
   text('BLOCK BROS', W / 2, 120 + Math.sin(t * 2) * 4, 64, '#ffd84a', 'center');
   text('CREEPER KINGDOM', W / 2, 165, 28, '#7fd650', 'center');
-  // CONTROLS GUIDE (left; reflects the WASD/ARROWS swap setting)
-  const L0 = 16;
-  panel(L0, 182, 484, 300);
-  const c1 = CTRL[G.swap ? 1 : 0], c2 = CTRL[G.swap ? 0 : 1], kn = list => list.filter(k => KEYNAME[k]).map(k => KEYNAME[k]).join(' / ');
-  const rows = [
-    ['MOVE', kn(c1.l) + ' ' + kn(c1.r), kn(c2.l) + ' ' + kn(c2.r), ''],
-    ['JUMP', kn(c1.j), kn(c2.j), 'hold = higher; stomp'],
-    ['CROUCH', kn(c1.c), kn(c2.c), 'duck under missiles'],
-    ['SWORD', kn(c1.a), kn(c2.a), 'deflects shots'],
-    ['SHIELD hold', kn(c1.s), kn(c2.s), 'blocks until it breaks'],
-    ['FIRE / GUN', kn(c1.f), kn(c2.f), 'flower / CRAZY gun'],
-    ['STICKY BOMB', kn(c1.b), kn(c2.b), 'CRAZY mode only'],
-  ];
-  text('CONTROLS', L0 + 14, 208, 14, '#ffd84a'); text('P1 ' + c1.name, L0 + 120, 208, 12, '#ff9a9a'); text('P2 ' + c2.name, L0 + 222, 208, 12, '#9af0a9');
-  rows.forEach((r, i) => { const y = 234 + i * 22; text(r[0], L0 + 14, y, 11, '#fff'); text(r[1], L0 + 120, y, 11, '#ffd0d0'); text(r[2], L0 + 222, y, 11, '#d0ffd8'); text(r[3], L0 + 330, y, 10, '#aaa'); });
-  text('P pause · M mute · C on world screen swaps keys', L0 + 242, 402, 11, '#ccc', 'center');
-  text('creepers blow up blocks · blocks regrow in 15s', L0 + 242, 420, 11, '#ccc', 'center');
+  controlsPanel(16, 182);
   // PROGRESS LIST (right; saved in the browser)
   const R0 = 512, recs = getRecords(), sv = getSave();
   panel(R0, 182, 432, 300);
@@ -1766,7 +1768,12 @@ function render() {
     G.cam = save; rect(W / 2 - 3, 0, 6, H, '#111'); rect(W / 2 - 1, 0, 2, H, '#ffd84a');
   } else { drawBackground(); drawWorld(); }
   drawHUD();
-  if (G.state === 'pause') { panel(W / 2 - 180, 200, 360, 130); text('PAUSED', W / 2, 250, 32, '#ffd84a', 'center'); text('P / Esc resume   Q quit', W / 2, 295, 14, '#fff', 'center'); }
+  if (G.state === 'pause') {
+    rect(0, 0, W, H, 'rgba(5,5,15,.7)');
+    text('PAUSED', W / 2, 110, 36, '#ffd84a', 'center');
+    controlsPanel(W / 2 - 242, 126);
+    text('P / Esc resume    Q quit to title    M sound', W / 2, 462, 15, '#fff', 'center');
+  }
   if (G.state === 'shop') drawShop();
   if (G.state === 'over') { panel(W / 2 - 220, 190, 440, 150); text('GAME OVER', W / 2, 245, 40, '#ff3b3b', 'center'); text('Press Enter for title', W / 2, 300, 14, '#fff', 'center'); }
   if (G.state === 'results') {

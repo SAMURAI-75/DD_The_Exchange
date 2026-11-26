@@ -142,6 +142,13 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 97 | Bad saved character data (hand-edited storage) | Every field is validated against the allowed lists and ranges, and names are stripped of unsafe characters | 🛡️ |
 | 98 | Startup crash: characters loaded before presets existed (found during testing) | Fixed the load order; tested: game boots with no errors | ✅ tested |
 
+## Round 10: pause menu and HUD
+
+| # | Flaw | Fix | Status |
+|---|---|---|---|
+| 99 | Pause screen didn't show controls | The pause menu shows the full controls table (same as the home screen, follows the key-swap setting) plus resume / quit / sound keys | ✅ tested |
+| 100 | "SHLD" label overlapped the player name and points in the HUD, reported by playtester | Shield label and bar moved onto the hearts row | ✅ tested |
+
 ## Known limitations (honest list)
 
 | # | Limitation | Status |
