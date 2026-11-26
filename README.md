@@ -58,7 +58,7 @@ P / Esc to pause · M to mute. On the **world select screen**: ← / → world, 
 
 ### Character customizer
 
-Before every game or race, each player picks a name, a preset and customizes hat, colours, shorts, outfit (overalls / dress / jacket / tank), skin, hair, race trail and race number (inspired by Mini Militia's avatar customization). Each player edits with their own keys; press their sword key on NAME to type. All characters are original designs.
+Before every game or race, each player picks a name, one of 13 original presets (Rookie, Sprinter, Rose, Commando, Shadow, Blaze, Frost, Knight, Astro, Chef, Wizard, Dino, Pirate) and customizes hat, colours, shorts, outfit (overalls / dress / jacket / tank), skin, hair, race trail and race number (inspired by Mini Militia's avatar customization). Each player edits with their own keys; press their sword key on NAME to type. All characters are original designs.
 
 ### Game types
 

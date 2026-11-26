@@ -386,7 +386,7 @@ const PAL = {
   skin:     ['#ffcc99', '#f1c27d', '#c68642', '#8d5524', '#ffe0bd'],
   hair:     ['#6b3a1a', '#212121', '#fdd835', '#e65100', '#9e9e9e', '#ec407a'],
 };
-const HATS = ['cap', 'helmet', 'bandana', 'crown', 'beanie', 'headband', 'none'];
+const HATS = ['cap', 'helmet', 'bandana', 'crown', 'beanie', 'headband', 'knight', 'astro', 'chef', 'wizard', 'dino', 'pirate', 'none'];
 const OUTFITS = ['overalls', 'dress', 'jacket', 'tank'];
 const TRAILS = ['none', 'sparkle', 'fire', 'rainbow', 'smoke'];
 const PRESETS = [
@@ -397,6 +397,12 @@ const PRESETS = [
   { preset: 'SHADOW',    hat: 'bandana',  hatColor: 5, shirt: 5, pants: 2, skin: 1, hair: 1, outfit: 'tank',     trail: 'fire' },
   { preset: 'BLAZE',     hat: 'headband', hatColor: 7, shirt: 7, pants: 5, skin: 3, hair: 3, outfit: 'jacket',   trail: 'fire' },
   { preset: 'FROST',     hat: 'beanie',   hatColor: 2, shirt: 9, pants: 7, skin: 4, hair: 4, outfit: 'jacket',   trail: 'sparkle' },
+  { preset: 'KNIGHT',    hat: 'knight',   hatColor: 0, shirt: 7, pants: 7, skin: 0, hair: 0, outfit: 'tank',     trail: 'sparkle' },
+  { preset: 'ASTRO',     hat: 'astro',    hatColor: 2, shirt: 6, pants: 7, skin: 1, hair: 1, outfit: 'jacket',   trail: 'smoke' },
+  { preset: 'CHEF',      hat: 'chef',     hatColor: 6, shirt: 6, pants: 2, skin: 2, hair: 1, outfit: 'jacket',   trail: 'fire' },
+  { preset: 'WIZARD',    hat: 'wizard',   hatColor: 4, shirt: 4, pants: 1, skin: 4, hair: 4, outfit: 'dress',    trail: 'rainbow' },
+  { preset: 'DINO',      hat: 'dino',     hatColor: 1, shirt: 1, pants: 4, skin: 0, hair: 0, outfit: 'jacket',   trail: 'sparkle' },
+  { preset: 'PIRATE',    hat: 'pirate',   hatColor: 0, shirt: 6, pants: 3, skin: 2, hair: 1, outfit: 'tank',     trail: 'smoke' },
 ];
 function defaultChar(id) { return Object.assign({ name: id ? 'PLAYER 2' : 'PLAYER 1', number: id ? 2 : 1 }, PRESETS[id ? 1 : 0]); }
 function loadChars() {
@@ -1339,6 +1345,12 @@ function drawHeroBody(p, x, y) {
   else if (C.hat === 'bandana') { rect(x + 3, y + 1, 16, 5, hatC); rect(f > 0 ? x : x + 18, y + 3, 4, 3, hatC); rect(f > 0 ? x - 2 : x + 20, y + 5, 3, 3, hatC); }
   else if (C.hat === 'crown') { rect(x + 3, y + 1, 16, 5, hair); rect(x + 5, y - 2, 12, 4, '#fdd835'); rect(x + 5, y - 5, 2, 3, '#fdd835'); rect(x + 10, y - 5, 2, 3, '#fdd835'); rect(x + 15, y - 5, 2, 3, '#fdd835'); rect(x + 10, y - 1, 2, 2, '#e53935'); }
   else if (C.hat === 'beanie') { rect(x + 3, y - 1, 16, 7, hatC); rect(x + 3, y + 4, 16, 2, '#ffffff'); rect(x + 9, y - 4, 4, 3, '#ffffff'); }
+  else if (C.hat === 'knight') { rect(x + 2, y - 1, 18, 9, '#b0bec5'); rect(x + 2, y + 6, 18, 2, '#78909c'); rect(f > 0 ? x + 12 : x + 4, y + 3, 6, 2, '#263238'); rect(x + 9, y - 6, 4, 6, hatC); }
+  else if (C.hat === 'astro') { rect(x + 1, y - 2, 20, 17, '#eceff1'); rect(f > 0 ? x + 9 : x + 3, y + 3, 10, 8, '#4fc3f7'); rect(f > 0 ? x + 10 : x + 4, y + 4, 3, 2, '#ffffff'); rect(x + 1, y + 12, 20, 2, hatC); }
+  else if (C.hat === 'chef') { rect(x + 3, y + 2, 16, 4, '#ffffff'); rect(x + 4, y - 7, 14, 9, '#ffffff'); rect(x + 2, y - 9, 6, 5, '#ffffff'); rect(x + 14, y - 9, 6, 5, '#ffffff'); rect(x + 3, y + 3, 16, 1, '#dddddd'); }
+  else if (C.hat === 'wizard') { rect(x + 1, y + 3, 20, 3, hatC); rect(x + 5, y - 2, 12, 5, hatC); rect(x + 8, y - 7, 7, 5, hatC); rect(x + 11, y - 11, 4, 4, hatC); rect(x + 7, y, 2, 2, '#fdd835'); rect(x + 13, y - 5, 2, 2, '#fdd835'); }
+  else if (C.hat === 'dino') { rect(x + 2, y - 1, 18, 8, hatC); rect(f > 0 ? x + 14 : x + 2, y + 1, 6, 3, '#ffffff'); rect(f > 0 ? x + 16 : x + 4, y + 2, 2, 2, '#111'); for (let i = 0; i < 3; i++) rect(f > 0 ? x + 1 - i * 3 : x + 18 + i * 3, y + 2 + i * 4, 4, 4, '#ff7043'); }
+  else if (C.hat === 'pirate') { rect(x + 3, y + 1, 16, 5, hatC); rect(f > 0 ? x : x + 18, y + 3, 4, 3, hatC); rect(f > 0 ? x + 12 : x + 6, y + 8, 4, 3, '#111'); rect(x + 4, y + 8, 14, 1, '#111'); }
   else if (C.hat === 'headband') { rect(x + 3, y + 1, 16, 4, hair); rect(x + 3, y + 3, 16, 2, hatC); rect(f > 0 ? x : x + 18, y + 3, 4, 2, hatC); }
   else rect(x + 3, y + 1, 16, 5, hair);
   // body by outfit
