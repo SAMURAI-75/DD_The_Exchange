@@ -925,8 +925,8 @@ function finishRace(p) {
   p.finished = true; p.place = place + 1; p.finishT = G.time; p.vx = 0;
   const bonus = place === 0 ? 1000 : 500, tb = Math.max(0, Math.round((240 - G.time) * 5));
   p.score = (p.score || 0) + bonus + tb; p.bonus = bonus + tb;
-  SFX.clear(); banner(`P${p.id + 1} FINISHED ${place === 0 ? '1ST' : '2ND'}! +${bonus + tb}`, 2);
-  if (place === 0) G.raceT = 30;
+  SFX.clear(); banner(`P${p.id + 1} WINS THE RACE! +${bonus + tb}`, 2);
+  if (place === 0) G.raceT = 1.5; // first across the flag ends the race (short celebration, then results)
 }
 function levelClear() {
   if (G.state !== 'play') return;
@@ -1099,7 +1099,7 @@ function update(dt) {
     if (G.state === 'play') {
       if (G.raceT != null) G.raceT -= dt;
       const done = G.p.every(q => q.finished || (q.dead && q.lives <= 0 && q.respawn <= 0));
-      if (done || (G.raceT != null && G.raceT <= 0)) { G.state = 'results'; SFX.clear(); }
+      if (done || (G.raceT != null && G.raceT <= 0)) { G.state = 'results'; G.raceEnd = G.time; G.raceT = null; releaseAll(); SFX.clear(); }
     }
   } else if (G.p.every(p => p.dead) && G.lives <= 0 && G.p.every(p => p.respawn <= 0)) {
     G.overT += dt; if (G.overT > 1.2) G.state = 'over';
@@ -1554,15 +1554,17 @@ function render() {
   if (G.state === 'over') { panel(W / 2 - 220, 190, 440, 150); text('GAME OVER', W / 2, 245, 40, '#ff3b3b', 'center'); text('Press Enter for title', W / 2, 300, 14, '#fff', 'center'); }
   if (G.state === 'results') {
     panel(W / 2 - 300, 120, 600, 300); text('RACE RESULTS', W / 2, 165, 36, '#ffd84a', 'center');
-    const ranked = [...G.p].sort((a, b) => b.score - a.score);
+    // the winner is whoever crossed the flag first; if nobody finished, the higher score wins
+    const ranked = [...G.p].sort((a, b) => (a.finished ? a.place : 9) - (b.finished ? b.place : 9) || b.score - a.score);
+    const win = ranked[0], tie = !win.finished && ranked[0].score === ranked[1].score;
+    text(tie ? "IT'S A TIE!" : `${win.id ? 'P2 GREEN' : 'P1 RED'} WINS!`, W / 2, 200, 26, tie ? '#fff' : win.id ? '#5ef07a' : '#ff6b6b', 'center');
     ranked.forEach((p, i) => {
-      const y = 220 + i * 60, col = p.id ? '#5ef07a' : '#ff6b6b';
-      text(`${i === 0 ? 'WINNER' : '2ND'}  ${p.id ? 'P2 GREEN' : 'P1 RED'}`, W / 2 - 270, y, 20, col);
+      const y = 250 + i * 56, col = p.id ? '#5ef07a' : '#ff6b6b';
+      text(`${i === 0 && !tie ? '1ST' : '2ND'}  ${p.id ? 'P2 GREEN' : 'P1 RED'}`, W / 2 - 270, y, 20, col);
       text(`${p.score} pts`, W / 2 + 270, y, 20, '#fff', 'right');
-      text(p.finished ? `crossed the flag ${p.place === 1 ? '1st' : '2nd'} in ${fmtTime(p.finishT)} (+${p.bonus} bonus)` : 'did not finish', W / 2 - 270, y + 20, 12, '#ccc');
+      text(p.finished ? `TIME ${fmtTime(p.finishT)}  (finish bonus +${p.bonus})` : `did not finish  (race ended at ${fmtTime(G.raceEnd || G.time)})`, W / 2 - 270, y + 20, 12, '#ccc');
     });
-    if (G.p[0].score === G.p[1].score) text("IT'S A TIE!", W / 2, 360, 18, '#fff', 'center');
-    text('Points: coin 10 · kill 100 · key 200 · finish 1st 1000 / 2nd 500 · time bonus · death -250', W / 2, 390, 11, '#aaa', 'center');
+    text('coin 10 · kill 100 · key 200 · 1st finish 1000 · time bonus · death -250', W / 2, 390, 11, '#aaa', 'center');
     text('Press Enter for title', W / 2, 410, 13, '#fff', 'center');
   }
   if (G.state === 'win') {

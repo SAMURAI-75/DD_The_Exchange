@@ -59,7 +59,7 @@ P / Esc to pause · M to mute. On the **world select screen**: ← / → world, 
 ### Game types
 
 - **Co-op**: play through every level of the world together (or solo).
-- **Drag race** (2 players): both race the same level in split screen with their own lives, keys and checkpoints. **Points**: coin 10 · kill 100 · key 200 · power-up 50 · finish 1st +1000 / 2nd +500 · time bonus · death −250. The race ends 30 s after the first finisher.
+- **Drag race** (2 players): both race the same level in split screen with their own lives, keys and checkpoints. **Points**: coin 10 · kill 100 · key 200 · power-up 50 · finish 1st +1000 / 2nd +500 · time bonus · death −250. The race ends as soon as the first player crosses the flag, and a results screen shows the winner, their time and both players' points.
 
 ### Worlds
 

@@ -117,6 +117,12 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 87 | **Sound overlapping, and still playing with SOUND OFF**, reported by playtester. Cause: several copies of the game open at once (old tabs, test pane); muting one didn't silence the others, and queued notes kept playing for a moment | All audio now goes through one **master gain**: M sets it to 0 instantly, cutting notes already queued. The audio context is **suspended whenever the tab is hidden or loses focus**, so background copies are silent, and it resumes on the next key press. The music scheduler also stops while hidden. Tested: M toggles and persists, no errors | ✅ tested |
 | 88 | Heavy action (gun + explosions + horde) stacking dozens of sounds into noise | At most 24 sounds play at once; extra sound requests are dropped | 🛡️ |
 
+## Round 7: race ending
+
+| # | Flaw | Fix | Status |
+|---|---|---|---|
+| 89 | **Drag race seemed frozen after the first player finished**, reported by playtester. The winner's half of the screen stood still during a 30 s wait for the other player | The race now **ends 1.5 s after the first player crosses the flag** and shows a results screen: winner (first across the flag), finish time, and both players' points. Keys are released so nothing carries over. Tested: no errors, results screen shown, the other player could still move until the end | ✅ tested |
+
 ## Known limitations (honest list)
 
 | # | Limitation | Status |
