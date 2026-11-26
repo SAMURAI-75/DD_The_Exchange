@@ -1,16 +1,48 @@
 # Block Bros: Creeper Kingdom
 
-A 2D platformer where you fight blocky mobs instead of the usual enemies. Made for **The Exchange** (Track I: Remix the Classic, "Mario × Minecraft").
+## README.md Format
 
-## Run it
+### Team Name
+- Ding Ding
 
-No install and no build step. Pick one:
-- Double-click `index.html`, **or**
-- `python3 -m http.server 8000`, then open http://localhost:8000
+### Track Number & Name
+- Track I: Remix the Classic
+
+### Problem Statement Name
+- Mario x Minecraft
+
+### Idea
+- A 2D platformer in the style of Super Mario where the enemies are Minecraft mobs, each with its own behaviour: zombies chase and keep attacking, creepers walk up and explode (even when you're above them) and blow holes in platforms, and skeletons shoot arrows that knock you back.
+- You run, jump, stomp and fight your way to the flag with a sword you upgrade using coins, rare shields that break after enough hits, and Mario-style power-ups.
+- Three worlds to pick from (Overworld, Nether, The End) with bosses, keys and locked doors, 1–2 player co-op with split screen and teamwork puzzles, a 2-player drag race scored on points, and a chaotic CRAZY mode.
+
+### How to Run
+- **Prerequisites:** any modern web browser (Chrome, Edge, Firefox or Safari). Optional: Python 3, only if you prefer to serve the files locally. No internet, accounts or paid APIs needed.
+- **Installation steps:** none. There are no dependencies and no build step. Clone the repo:
+  ```bash
+  git clone https://github.com/SAMURAI-75/DD_The_Exchange.git
+  cd DD_The_Exchange
+  ```
+- **Exact commands to run the project locally:**
+  - Option 1: open the file directly
+    ```bash
+    open index.html
+    ```
+    (On Windows: `start index.html`; on Linux: `xdg-open index.html`; or just double-click `index.html`.)
+  - Option 2: serve it locally
+    ```bash
+    python3 -m http.server 8000
+    ```
+    Then open http://localhost:8000 in your browser.
+- Press **Enter** on the title screen, pick a world, mode and number of players, and press **Enter** again to play.
+
+---
+
+## More details
 
 Works offline. All art, sound effects and the music (original chiptune, one track per world) are generated in code (`game.js`).
 
-## Controls
+### Controls
 
 | | Player 1 (WASD) | Player 2 (Arrows) |
 |---|---|---|
@@ -24,12 +56,12 @@ Works offline. All art, sound effects and the music (original chiptune, one trac
 
 P / Esc to pause · M to mute. On the **world select screen**: ← / → world, ↑ / ↓ mode, 1 / 2 players, **R** co-op / drag race, **C** swap which player uses WASD vs arrows (saved), Enter to start.
 
-## Game types
+### Game types
 
 - **Co-op**: play through every level of the world together (or solo).
 - **Drag race** (2 players): both race the same level in split screen with their own lives, keys and checkpoints. **Points**: coin 10 · kill 100 · key 200 · power-up 50 · finish 1st +1000 / 2nd +500 · time bonus · death −250. The race ends 30 s after the first finisher.
 
-## Worlds
+### Worlds
 
 | World | Difficulty | Inspired by | What's there |
 |---|---|---|---|
@@ -39,11 +71,11 @@ P / Esc to pause · M to mute. On the **world select screen**: ← / → world, 
 
 Every level has **key rooms**: grab the key inside to unlock the door further on. Blocks destroyed by blasts **grow back after 15 seconds**.
 
-## Modes
+### Modes
 
 Easy · Normal · Hard (shields spawn damaged) · **CRAZY** (inspired by GTA-style chaos): automatic gun, sticky bombs, 9 lives and a horde of up to 15 mobs spawning nonstop.
 
-## Features
+### Features
 
 - **Zombies** chase you and keep attacking.
 - **Creepers** chase you, start their fuse even if you're above them, and blow up a **6-block radius**. The blast destroys platforms, hurts other mobs, and sets off nearby creepers.
@@ -57,7 +89,7 @@ Easy · Normal · Hard (shields spawn damaged) · **CRAZY** (inspired by GTA-sty
 - **Boss: the Ghost Miner** teleports, fires orbs, and summons mobs, over 3 phases.
 - Easy / Normal / Hard, checkpoint with indestructible pads, best time saved.
 
-## Files
+### Files
 
 - `index.html`: page and canvas
 - `game.js`: the whole game
