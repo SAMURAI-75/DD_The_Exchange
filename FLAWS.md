@@ -83,6 +83,16 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 66 | Difficulty selection "didn't work" | The playtester was on a stale tab of the old build; the new world screen uses ↑/↓ for mode (tested). Hard-refresh to update | ✅ tested |
 | 67 | Unwalkable terrain check | Automated scan of all levels: no 5-high walls on the path except the climbable finale staircase; max pit 3 blocks (jump covers about 5) | ✅ tested |
 
+## Round 4 of building: regrowing blocks and 3 new levels
+
+| # | Flaw | Fix | Status |
+|---|---|---|---|
+| 68 | **Big blasts left levels unplayable** (huge holes in platforms), reported by playtester | Every destroyed block **grows back after 15 s**, flickering in over the last 3 s as a warning. Tested: 17 tiles destroyed, all back at 16 s | ✅ tested |
+| 69 | A block regrowing inside a player or mob would trap them | Regrowth waits (rechecks every 0.5 s) while any player, mob or item overlaps the spot. Tested: held a player in the hole for 16 s, the block stayed empty, then regrew after they left | ✅ tested |
+| 70 | Destroyed ? blocks regrowing would give infinite items | They regrow as used (empty) blocks | 🛡️ |
+| 71 | Gates, doors and key-room logic must not regrow | Only blocks broken by blasts/bumps regrow; opened gates and doors stay open | 🛡️ |
+| 72 | 3 new levels must be completable | Mineshaft Caves (Overworld 3), Nether Fortress (Nether 2), End Islands (End 1): each has a flag, 2 keys + 2 doors, max pit 3 blocks. Tested world progression Overworld 1 → 2 → Caves → Boss with the shop between | ✅ tested |
+
 ## Known limitations (honest list)
 
 | # | Limitation | Status |
@@ -91,5 +101,5 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 35 | The shield blocks from all directions (simpler, and more forgiving for players) | ⚠️ design choice |
 | 36 | Boss orbs pass through blocks on purpose (ghost) | ⚠️ design choice |
 | 37 | ? block contents are random each run, not seeded | ⚠️ |
-| 38 | The Nether and the End have one level each (the End is a boss arena) | ⚠️ scope |
+| 38 | The End has one normal level before the dragon arena | ⚠️ scope |
 | 56 | Music is simple generated chiptune, with no volume slider (M mutes everything) | ⚠️ |

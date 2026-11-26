@@ -90,6 +90,7 @@ const SONGS = {
   nether: { bpm: 112, wave: 'sawtooth', vol: 0.018, mel: [57, 0, 60, 0, 64, 63, 0, 60, 57, 0, 55, 0, 57, 0, 0, 0, 57, 60, 64, 67, 66, 64, 63, 60, 62, 0, 59, 0, 57, 0, 0, 0], bass: [33, 33, 36, 36, 31, 31, 32, 32] },
   end:    { bpm: 92, wave: 'triangle', vol: 0.04, mel: [69, 0, 0, 76, 0, 0, 74, 0, 72, 0, 0, 71, 0, 0, 67, 0, 69, 0, 0, 72, 0, 76, 0, 81, 79, 0, 0, 76, 0, 0, 0, 0], bass: [33, 33, 29, 29, 31, 31, 28, 28] },
   boss:   { bpm: 172, wave: 'square', vol: 0.022, mel: [64, 64, 67, 64, 70, 69, 67, 64, 62, 62, 65, 62, 69, 67, 65, 62, 64, 0, 64, 67, 0, 71, 72, 71, 69, 67, 69, 0, 64, 0, 0, 0], bass: [40, 40, 43, 43, 46, 46, 45, 45] },
+  cave:   { bpm: 100, wave: 'triangle', vol: 0.045, mel: [64, 0, 67, 0, 71, 0, 69, 67, 64, 0, 62, 0, 64, 0, 0, 0, 60, 0, 64, 0, 67, 0, 66, 64, 62, 0, 59, 0, 60, 0, 0, 0], bass: [40, 40, 36, 36, 38, 38, 35, 35] },
   win:    { bpm: 140, wave: 'square', vol: 0.03, mel: [72, 76, 79, 84, 0, 79, 84, 0, 0, 0, 0, 0, 0, 0, 0, 0], bass: [48, 52, 55, 48, 0, 0, 0, 0] },
 };
 const music = { song: null, step: 0, next: 0 };
@@ -136,11 +137,12 @@ const DIFF = {
 };
 const DKEYS = ['easy', 'normal', 'hard', 'crazy'];
 const MAPS = [
-  { name: 'OVERWORLD', stars: 1, tier: 'EASY', levels: [1, 2, 3], sword: 0, color: '#7fd650', insp: 'Super Mario Bros. 1-1 x Minecraft Overworld', desc: ['Zombies, creepers, skeletons', 'Boss: the Ghost Miner'] },
-  { name: 'THE NETHER', stars: 2, tier: 'MEDIUM', levels: [4], sword: 1, color: '#ff6b3d', insp: 'Mario lava castles x Minecraft Nether', desc: ['Lava pits, ghasts & blazes', 'Swing at ghast fireballs!'] },
-  { name: 'THE END', stars: 3, tier: 'HARD', levels: [5], sword: 2, color: '#c77dff', insp: 'Mario boss battles x Minecraft The End', desc: ['Smash the end crystals', 'Boss: the Ender Dragon'] },
+  { name: 'OVERWORLD', stars: 1, tier: 'EASY', levels: [1, 2, 6, 3], sword: 0, color: '#7fd650', insp: 'Super Mario Bros. 1-1 x Minecraft Overworld', desc: ['3 levels incl. Mineshaft Caves', 'Boss: the Ghost Miner'] },
+  { name: 'THE NETHER', stars: 2, tier: 'MEDIUM', levels: [4, 7], sword: 1, color: '#ff6b3d', insp: 'Mario lava castles x Minecraft Nether', desc: ['Lava pits + Nether Fortress', 'Swing at ghast fireballs!'] },
+  { name: 'THE END', stars: 3, tier: 'HARD', levels: [8, 5], sword: 2, color: '#c77dff', insp: 'Mario boss battles x Minecraft The End', desc: ['End Islands over the void', 'Boss: the Ender Dragon'] },
 ];
-const THEME = { 1: 'over', 2: 'over', 3: 'night', 4: 'nether', 5: 'end' };
+const THEME = { 1: 'over', 2: 'over', 3: 'night', 4: 'nether', 5: 'end', 6: 'cave', 7: 'nether', 8: 'end' };
+const LEVEL_NAME = { 1: 'GREEN HILLS', 2: 'CREEPER COUNTRY', 3: 'BOSS: THE GHOST MINER', 4: 'LAVA LAKES', 5: 'THE END: SLAY THE DRAGON', 6: 'MINESHAFT CAVES', 7: 'NETHER FORTRESS', 8: 'END ISLANDS' };
 const SWORDS = [
   { n: 'WOOD', dmg: 1, reach: 26, c: '#b07a3c', cost: 0 },
   { n: 'STONE', dmg: 2, reach: 32, c: '#9a9a9a', cost: 12 },
@@ -156,9 +158,9 @@ const BREAKABLE = new Set(['#', 'B', '?', 'T', 'U']);
 function makeLevel(n) {
   if (n === 3) return bossArena();
   if (n === 5) return endArena();
-  const nether = n === 4;
+  const nether = n === 4 || n === 7;
   const rng = mulberry(n * 9973 + 7), ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
-  const w = n === 1 ? 230 : nether ? 250 : 270;
+  const w = { 1: 230, 2: 270, 4: 250, 6: 250, 7: 260, 8: 240 }[n] || 250;
   const g = Array.from({ length: ROWS }, () => new Array(w).fill('.'));
   const set = (x, y, c) => { if (x >= 0 && x < w && y >= 0 && y < ROWS) g[y][x] = c; };
   for (let x = 0; x < w; x++) { set(x, 15, '#'); set(x, 16, 'X'); }
@@ -181,7 +183,13 @@ function makeLevel(n) {
       return 12;
     },
   };
-  const order = nether
+  const order = n === 7
+    ? ['blaze', 'pit', 'blaze', 'ghast', 'tower', 'pit', 'blaze', 'qrow', 'ghast', 'pit', 'blaze', 'perch', 'pit', 'ghast', 'blaze', 'pipe']
+    : n === 6
+    ? ['creeper', 'qrow', 'pit', 'tower', 'creeper', 'pipe', 'perch', 'creeper', 'tower', 'qrow', 'pit', 'creeper', 'flat', 'creeper']
+    : n === 8
+    ? ['pit', 'tower', 'pit', 'creeper', 'pit', 'flat', 'tower', 'pit', 'perch', 'qrow', 'pit', 'creeper', 'tower']
+    : nether
     ? ['ghast', 'pit', 'blaze', 'flat', 'pit', 'tower', 'ghast', 'blaze', 'pit', 'pipe', 'ghast', 'qrow', 'blaze', 'pit', 'perch', 'ghast', 'flat', 'blaze']
     : n === 1
     ? ['flat', 'qrow', 'pit', 'tower', 'creeper', 'pipe', 'perch', 'qrow', 'creeper', 'pit', 'tower', 'flat', 'creeper', 'perch', 'pipe']
@@ -253,7 +261,7 @@ function endArena() {
   return finalize(g, w, 5);
 }
 function finalize(g, w, n) {
-  const L = { n, w, g, theme: THEME[n], gates: [], doors: [], mobs: [], items: [], flagX: -1, spawn: { x: 3 * T, y: 14 * T }, cpCol: Math.floor(w / 2) };
+  const L = { n, w, g, theme: THEME[n], gates: [], doors: [], regen: [], mobs: [], items: [], flagX: -1, spawn: { x: 3 * T, y: 14 * T }, cpCol: Math.floor(w / 2) };
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < w; x++) {
     const c = g[y][x];
     if ('zcsgbk'.includes(c) && c !== '.') { L.mobs.push(makeMob({ z: 'zombie', c: 'creeper', s: 'skeleton', g: 'ghast', b: 'blaze', k: 'crystal' }[c], x * T + 5, y * T + 1)); g[y][x] = '.'; }
@@ -294,6 +302,25 @@ function moveBody(b, dt) {
     else if (b.vy < 0) { const ty = Math.floor(b.y / T); b.y = (ty + 1) * T + 0.01; if (b.onHead) b.onHead(b, ty); }
     b.vy = 0;
   }
+}
+// Destroyed blocks grow back after REGROW seconds so big blasts never leave a level unplayable.
+const REGROW = 15;
+function breakTile(tx, ty) {
+  const c = tile(tx, ty); if (!BREAKABLE.has(c)) return;
+  setTile(tx, ty, '.');
+  G.lvl.regen.push({ x: tx, y: ty, c: c === '?' ? 'U' : c, t: REGROW });
+}
+function updateRegen(dt) {
+  const L = G.lvl; if (!L.regen.length) return;
+  for (const r of L.regen) {
+    r.t -= dt; if (r.t > 0) continue;
+    const box = { x: r.x * T, y: r.y * T, w: T, h: T };
+    const blocked = G.p.some(p => !p.dead && overlap(p, box)) || L.mobs.some(m => !m.dead && overlap(m, box)) || L.items.some(i => !i.taken && overlap(i, box));
+    if (blocked || tile(r.x, r.y) !== '.') { r.t = 0.5; if (tile(r.x, r.y) !== '.') r.done = true; continue; }
+    setTile(r.x, r.y, r.c); r.done = true;
+    burst(r.x * T + 16, r.y * T + 16, '#bfffb0', 4, 60, 3);
+  }
+  L.regen = L.regen.filter(r => !r.done);
 }
 function unstick(b) { let n = 0; while (boxHits(b) && n++ < ROWS) b.y -= T; }
 
@@ -340,7 +367,7 @@ function loadLevel(n) {
     p.hp = p.maxhp; unstick(p);
   });
   G.keys = 0; G.cam = 0; G.split = false; G.cams = null; G.viewL = 0; G.viewR = W;
-  banner(n === 3 ? 'BOSS: THE GHOST MINER' : n === 5 ? 'THE END: SLAY THE DRAGON' : n === 4 ? 'THE NETHER' : 'OVERWORLD ' + n);
+  banner(LEVEL_NAME[n] || 'LEVEL ' + n);
   if (G.diff.crazy) setTimeout(() => banner('CRAZY MODE: GUNS + BOMBS!', 2), 1800);
 }
 function banner(text, t = 2) { G.msg = { text, t }; }
@@ -364,7 +391,7 @@ function headBump(p, ty) {
   if (!solidAt(tx, ty)) { const a = Math.floor(p.x / T); tx = solidAt(a, ty) ? a : Math.floor((p.x + p.w - 0.001) / T); }
   const c = tile(tx, ty);
   if (c === '?') { setTile(tx, ty, 'U'); blockItem(tx, ty); SFX.bump(); }
-  else if (c === 'B') { setTile(tx, ty, '.'); debris(tx, ty, '#c4512c'); SFX.brk(); bonkAbove(tx, ty); }
+  else if (c === 'B') { breakTile(tx, ty); debris(tx, ty, '#c4512c'); SFX.brk(); bonkAbove(tx, ty); }
   else SFX.bump();
 }
 function bonkAbove(tx, ty) {
@@ -588,7 +615,7 @@ function explode(m) {
     if (y >= ROWS - 1 || y < 0) continue;
     if (Math.hypot(x + 0.5 - ex / T, y + 0.5 - ey / T) > r) continue;
     const c = tile(x, y);
-    if (BREAKABLE.has(c)) { setTile(x, y, '.'); if (Math.random() < 0.5) debris(x, y, c === '#' ? '#8b5a2b' : '#c4512c'); }
+    if (BREAKABLE.has(c)) { breakTile(x, y); if (Math.random() < 0.5) debris(x, y, c === '#' ? '#8b5a2b' : '#c4512c'); }
   }
   for (const p of G.p) {
     if (p.dead) continue;
@@ -724,7 +751,7 @@ function smallBlast(x, y, r, kind, mine) {
   for (let ty = r0 - reach; ty <= r0 + reach; ty++) for (let tx = c0 - reach; tx <= c0 + reach; tx++) {
     if (ty >= ROWS - 1 || ty < 0) continue;
     if (Math.hypot(tx + 0.5 - x / T, ty + 0.5 - y / T) > rt) continue;
-    const c = tile(tx, ty); if (BREAKABLE.has(c)) { setTile(tx, ty, '.'); if (Math.random() < 0.4) debris(tx, ty, '#8b5a2b'); }
+    const c = tile(tx, ty); if (BREAKABLE.has(c)) { breakTile(tx, ty); if (Math.random() < 0.4) debris(tx, ty, '#8b5a2b'); }
   }
   for (const p of G.p) if (!p.dead && Math.hypot(midX(p) - x, midY(p) - y) < r) hurtPlayer(p, 1, x, 380, 320, kind);
   if (mine) for (const m of G.lvl.mobs) if (!m.dead && Math.hypot(midX(m) - x, midY(m) - y) < r + m.w / 2) {
@@ -883,7 +910,7 @@ function update(dt) {
   if (hit1('KeyM')) { muted = !muted; store.set('bb_muted', muted); }
   if (G.msg) { G.msg.t -= dt; if (G.msg.t <= 0) G.msg = null; }
   setSong(G.state === 'title' || G.state === 'maps' ? 'title' : G.state === 'win' ? 'win' : G.state === 'over' ? null
-    : G.lvl ? { over: 'over', night: 'boss', nether: 'nether', end: 'end' }[G.lvl.theme] : 'title');
+    : G.lvl ? { over: 'over', night: 'boss', nether: 'nether', end: 'end', cave: 'cave' }[G.lvl.theme] : 'title');
   if (G.state === 'title') { if (hit1('Enter', 'Space', 'NumpadEnter')) { G.state = 'maps'; SFX.menu(); } return; }
   if (G.state === 'maps') {
     const n = DKEYS.length;
@@ -911,7 +938,7 @@ function update(dt) {
   // play / clear both simulate the world so the celebration looks alive
   if (G.state === 'play') G.time += dt;
   for (const p of G.p) updatePlayer(p, dt);
-  spawnHorde(dt); updateGates(dt);
+  spawnHorde(dt); updateGates(dt); updateRegen(dt);
   for (const m of G.lvl.mobs) if (!m.dead) updateMob(m, dt);
   G.lvl.mobs = G.lvl.mobs.filter(m => !m.dead);
   updateProj(dt); updateItems(dt);
@@ -1001,6 +1028,16 @@ function makeThemedTile(c, theme) {
     if (c === 'G') { speck('#4a4a52', ['#33333a', '#62626b'], 20); px(0, 0, T, 6, '#9a2f2f'); px(0, 0, T, 2, '#c24a3a'); return o; }
     if (c === 'B') { px(0, 0, T, T, '#3a1418'); g.fillStyle = '#1e0a0c'; for (let y = 0; y < T; y += 8) { g.fillRect(0, y + 7, T, 1); const off = (y / 8) % 2 ? 8 : 0; for (let x = off; x < T; x += 16) g.fillRect(x, y, 1, 8); } return o; }
     if (c === 'T') { speck('#3b3b44', ['#2a2a31', '#55555f'], 16); px(0, 0, 3, T, '#5a5a66'); return o; }
+  }
+  if (theme === 'cave') {
+    if (c === '#' || c === 'D') {
+      speck('#6d6d74', ['#5a5a61', '#808088', '#4e4e55'], 22);
+      if (r() < 0.5) { const ore = r() < 0.15 ? '#4ee6e0' : r() < 0.5 ? '#d8a878' : '#1e1e1e'; for (let i = 0; i < 3; i++) px(4 + Math.floor(r() * 6) * 4, 4 + Math.floor(r() * 6) * 4, 4, 4, ore); }
+      return o;
+    }
+    if (c === 'G') { speck('#6a6a6a', ['#555', '#7d7d7d'], 20); px(0, 0, T, 5, '#4f8a3a'); return o; }
+    if (c === 'B') { px(0, 0, T, T, '#a8824e'); g.fillStyle = '#7a5a30'; for (let y = 0; y < T; y += 8) g.fillRect(0, y + 7, T, 1); g.fillRect(10, 0, 1, 8); g.fillRect(22, 8, 1, 8); g.fillRect(6, 16, 1, 8); g.fillRect(26, 24, 1, 8); return o; }
+    if (c === 'T') { px(0, 0, T, T, '#6b4a2a'); px(4, 0, 4, T, '#8a6238'); px(20, 0, 3, T, '#4a3218'); return o; }
   }
   if (theme === 'end') {
     if (c === '#' || c === 'D' || c === 'G') { speck('#dcd9a3', ['#c9c58c', '#ece9bb', '#bdb97f'], 22); if (c === 'G') { px(0, 0, T, 4, '#b48ee0'); } return o; }
@@ -1145,6 +1182,17 @@ function drawBackground() {
     for (let i = 0; i < 30; i++) { const ex = (i * 97 + now * 30 * (1 + i % 3)) % W, ey = H - ((now * 40 * (1 + i % 4) + i * 53) % H); rect(ex, ey, 3, 3, i % 2 ? '#ffb03b' : '#ff5a1a'); }
     return;
   }
+  if (th === 'cave') {
+    const grd = cx.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, '#121216'); grd.addColorStop(1, '#2a2730');
+    cx.fillStyle = grd; cx.fillRect(0, 0, W, H);
+    for (let i = 0; i < 14; i++) { const x = ((i * 170 - G.cam * 0.3) % (W + 170) + W + 170) % (W + 170) - 85; rect(x, 0, 64, 40 + (i * 37) % 70, '#1c1b21'); rect(x + 20, 40 + (i * 37) % 70, 24, 18, '#1c1b21'); }
+    for (let i = 0; i < 7; i++) { // torches with flicker glow
+      const x = ((i * 290 - G.cam * 0.5) % (W + 290) + W + 290) % (W + 290) - 145, y = 220 + (i % 3) * 40, f = 0.25 + 0.1 * Math.sin(now * 12 + i);
+      cx.globalAlpha = f; cx.fillStyle = '#ffb03b'; cx.beginPath(); cx.arc(x + 3, y, 46, 0, Math.PI * 2); cx.fill(); cx.globalAlpha = 1;
+      rect(x, y, 6, 20, '#6b4a2a'); rect(x - 1, y - 6, 8, 7, '#ffcf3a');
+    }
+    return;
+  }
   if (th === 'end') {
     const grd = cx.createLinearGradient(0, 0, 0, H); grd.addColorStop(0, '#05030a'); grd.addColorStop(1, '#1d1030');
     cx.fillStyle = grd; cx.fillRect(0, 0, W, H);
@@ -1183,6 +1231,10 @@ function drawWorld() {
     const fx = L.flagX; rect(fx, 4 * T, 4, 11 * T, '#ddd'); rect(fx - 2, 4 * T - 8, 8, 8, '#ffd84a');
     const wave = Math.sin(performance.now() / 200) * 3; rect(fx + 4, 4 * T + 4 + wave, 30, 20, '#2fbf4a');
     rect(fx + 12, 4 * T + 9 + wave, 4, 4, '#111'); rect(fx + 22, 4 * T + 9 + wave, 4, 4, '#111'); rect(fx + 16, 4 * T + 14 + wave, 6, 5, '#111');
+  }
+  for (const r of L.regen) if (r.t < 3 && r.x >= c0 && r.x <= c1) {
+    cx.globalAlpha = 0.15 + 0.25 * (1 - r.t / 3) + (Math.floor(r.t * 8) % 2 ? 0.1 : 0);
+    cx.drawImage(tileImg(r.c), r.x * T, r.y * T); cx.globalAlpha = 1;
   }
   if (L.theme === 'nether') for (let x = c0; x <= c1; x++) if (!solidAt(x, 16)) { // lava pits
     const wv = Math.sin(performance.now() / 300 + x) * 3;
@@ -1246,7 +1298,7 @@ function drawHUD() {
     if (p.star > 0) text('STAR ' + Math.ceil(p.star), ix, 34, 11, '#ffe94a');
   });
   const cxm = W / 2;
-  text(`${MAPS[G.map].name} ${G.li + 1}/${MAPS[G.map].levels.length}   ${G.diff.name}`, cxm, 16, 12, G.diff.crazy ? `hsl(${(performance.now() / 4) % 360},100%,65%)` : '#fff', 'center');
+  text(`${MAPS[G.map].name} ${G.li + 1}/${MAPS[G.map].levels.length}: ${(LEVEL_NAME[G.level] || '').replace('BOSS: ', '').replace('THE END: ', '')}   ${G.diff.name}`, cxm, 16, 12, G.diff.crazy ? `hsl(${(performance.now() / 4) % 360},100%,65%)` : '#fff', 'center');
   text(`${G.lvl.doors.length ? 'KEYS ' + G.keys + '   ' : ''}COINS ${G.coins}   LIVES ${G.lives}   SWORD ${SWORDS[G.sword].n}   ${fmtTime(G.time)}`, cxm, 36, 13, '#ffd84a', 'center');
   const boss = G.lvl.mobs.find(m => m.type === 'boss' || m.type === 'dragon');
   if (boss) {

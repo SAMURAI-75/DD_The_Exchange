@@ -27,11 +27,11 @@ P / Esc to pause · M to mute. On the **world select screen**: ← / → world, 
 
 | World | Difficulty | Inspired by | What's there |
 |---|---|---|---|
-| Overworld | ★☆☆ Easy | Super Mario Bros. World 1-1 × Minecraft Overworld | 2 long levels + the Ghost Miner boss. Zombies, creepers, skeletons |
-| The Nether | ★★☆ Medium | Mario lava castles × Minecraft Nether | Lava pits, lava-fall background, ghasts (swing to send fireballs back), blazes |
-| The End | ★★★ Hard | Mario boss battles × Minecraft The End | The Ender Dragon circles, breathes and swoops. Smash the 3 end crystals that heal it |
+| Overworld | ★☆☆ Easy | Super Mario Bros. World 1-1 × Minecraft Overworld | Green Hills, Creeper Country, Mineshaft Caves + the Ghost Miner boss |
+| The Nether | ★★☆ Medium | Mario lava castles × Minecraft Nether | Lava Lakes + Nether Fortress. Lava pits, ghasts (swing to send fireballs back), blazes |
+| The End | ★★★ Hard | Mario boss battles × Minecraft The End | End Islands over the void, then the Ender Dragon (smash the 3 crystals that heal it) |
 
-Every level has **key rooms**: grab the key inside to unlock the door further on.
+Every level has **key rooms**: grab the key inside to unlock the door further on. Blocks destroyed by blasts **grow back after 15 seconds**.
 
 ## Modes
 
