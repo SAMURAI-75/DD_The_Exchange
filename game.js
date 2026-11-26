@@ -374,9 +374,49 @@ function makeItem(kind, x, y, fixed) { return { kind, x, y, w: kind === 'coin' ?
 const G = {
   state: 'title', players: 1, diffIdx: 1, diff: DIFF.normal, level: 1, lvl: null,
   p: [], coins: 0, lives: 3, sword: 0, cam: 0, shake: 0, proj: [], parts: [], texts: [], msg: null,
-  timer: 0, time: 0, cp: null, overT: 0, best: null, shopSel: 0, map: 0, li: 0, spawnT: 0, split: false, cams: null, viewL: 0, viewR: 960, race: false, raceT: null, swap: !!store.get('bb_swap', false),
+  timer: 0, time: 0, cp: null, overT: 0, best: null, shopSel: 0, map: 0, li: 0, spawnT: 0, split: false, cams: null, viewL: 0, viewR: 960, race: false, raceT: null, swap: !!store.get('bb_swap', false), chars: null, cust: null,
 };
 const bestKey = () => 'bb_best_' + G.map + '_' + DKEYS[G.diffIdx];
+
+// ---------- characters: Mini Militia-style customizer (all original designs) ----------
+const PAL = {
+  hatColor: ['#e53935', '#2fbf4a', '#1e88e5', '#fdd835', '#8e24aa', '#212121', '#ffffff', '#ff7043', '#6d7f3a'],
+  shirt:    ['#e53935', '#2fbf4a', '#1e88e5', '#fdd835', '#ec407a', '#212121', '#ffffff', '#ff7043', '#6d7f3a', '#00acc1'],
+  pants:    ['#1e4fd6', '#3949ab', '#212121', '#6d4c41', '#2e7d32', '#c62828', '#ec407a', '#9e9e9e', '#5a6a2a'],
+  skin:     ['#ffcc99', '#f1c27d', '#c68642', '#8d5524', '#ffe0bd'],
+  hair:     ['#6b3a1a', '#212121', '#fdd835', '#e65100', '#9e9e9e', '#ec407a'],
+};
+const HATS = ['cap', 'helmet', 'bandana', 'crown', 'beanie', 'headband', 'none'];
+const OUTFITS = ['overalls', 'dress', 'jacket', 'tank'];
+const TRAILS = ['none', 'sparkle', 'fire', 'rainbow', 'smoke'];
+const PRESETS = [
+  { preset: 'ROOKIE',    hat: 'cap',      hatColor: 0, shirt: 0, pants: 0, skin: 0, hair: 0, outfit: 'overalls', trail: 'sparkle' },
+  { preset: 'SPRINTER',  hat: 'cap',      hatColor: 1, shirt: 1, pants: 1, skin: 0, hair: 0, outfit: 'overalls', trail: 'smoke' },
+  { preset: 'ROSE',      hat: 'crown',    hatColor: 3, shirt: 9, pants: 3, skin: 2, hair: 1, outfit: 'dress',    trail: 'rainbow' },
+  { preset: 'COMMANDO',  hat: 'helmet',   hatColor: 8, shirt: 8, pants: 8, skin: 2, hair: 1, outfit: 'jacket',   trail: 'smoke' },
+  { preset: 'SHADOW',    hat: 'bandana',  hatColor: 5, shirt: 5, pants: 2, skin: 1, hair: 1, outfit: 'tank',     trail: 'fire' },
+  { preset: 'BLAZE',     hat: 'headband', hatColor: 7, shirt: 7, pants: 5, skin: 3, hair: 3, outfit: 'jacket',   trail: 'fire' },
+  { preset: 'FROST',     hat: 'beanie',   hatColor: 2, shirt: 9, pants: 7, skin: 4, hair: 4, outfit: 'jacket',   trail: 'sparkle' },
+];
+function defaultChar(id) { return Object.assign({ name: id ? 'PLAYER 2' : 'PLAYER 1', number: id ? 2 : 1 }, PRESETS[id ? 1 : 0]); }
+function loadChars() {
+  const saved = store.get('bb_chars', null), out = [defaultChar(0), defaultChar(1)];
+  if (Array.isArray(saved)) saved.slice(0, 2).forEach((c, i) => {
+    if (!c || typeof c !== 'object') return;
+    const d = out[i];
+    if (typeof c.name === 'string') d.name = c.name.replace(/[^A-Za-z0-9 _-]/g, '').slice(0, 10) || d.name;
+    if (typeof c.preset === 'string') d.preset = c.preset.slice(0, 10);
+    if (HATS.includes(c.hat)) d.hat = c.hat;
+    if (OUTFITS.includes(c.outfit)) d.outfit = c.outfit;
+    if (TRAILS.includes(c.trail)) d.trail = c.trail;
+    for (const k of ['hatColor', 'shirt', 'pants', 'skin', 'hair']) if (Number.isInteger(c[k]) && c[k] >= 0 && c[k] < PAL[k].length) d[k] = c[k];
+    if (Number.isInteger(c.number) && c.number >= 0 && c.number <= 99) d.number = c.number;
+  });
+  return out;
+}
+const charOf = p => (G.chars && G.chars[p.id]) || defaultChar(p.id);
+const nameOf = p => charOf(p).name;
+G.chars = loadChars();
 
 // ---------- saved progress (browser localStorage) ----------
 const REC_KEY = 'bb_records', SAVE_KEY = 'bb_save', LEVEL_ORDER = [1, 2, 6, 3, 4, 7, 8, 5];
@@ -522,6 +562,12 @@ function updatePlayer(p, dt) {
     p.y = mate.y - p.h - 0.5;
     if (held(k.j)) { p.vy = -1050; SFX.power(); floatText(midX(p), p.y - 8, 'TEAM BOOST!', '#7fe0ff'); burst(midX(p), p.y + p.h, '#7fe0ff', 10, 160, 3); }
     else { p.vy = -420; SFX.jump(); }
+  }
+  // race trail (cosmetic) while running
+  const tr = charOf(p).trail;
+  if (tr !== 'none' && Math.abs(p.vx) > 150 && Math.random() < 0.6 && G.parts.length < MAX_PARTICLES) {
+    const col = tr === 'fire' ? (Math.random() < 0.5 ? '#ff8a1a' : '#ffd35a') : tr === 'rainbow' ? `hsl(${(p.anim * 600) % 360},100%,60%)` : tr === 'smoke' ? '#aaaaaa' : (Math.random() < 0.5 ? '#ffffff' : '#fff27a');
+    G.parts.push({ x: midX(p) - Math.sign(p.vx) * 10, y: p.y + p.h - rand(4, 12), vx: -p.vx * 0.15, vy: tr === 'fire' || tr === 'smoke' ? -60 : rand(-30, 30), life: 0.35, color: col, size: tr === 'smoke' ? 5 : 3 });
   }
   // attack
   if (tapped(k.a) && p.atkCd <= 0) { p.atk = 0.18; p.atkCd = 0.33; p.hitSet = new Set(); SFX.swing(); }
@@ -965,7 +1011,7 @@ function finishRace(p) {
   p.finished = true; p.place = place + 1; p.finishT = G.time; p.vx = 0;
   const bonus = place === 0 ? 1000 : 500, tb = Math.max(0, Math.round((240 - G.time) * 5));
   p.score = (p.score || 0) + bonus + tb; p.bonus = bonus + tb;
-  SFX.clear(); banner(`P${p.id + 1} WINS THE RACE! +${bonus + tb}`, 2);
+  SFX.clear(); banner(`${nameOf(p)} WINS THE RACE! +${bonus + tb}`, 2);
   if (place === 0) { G.raceT = 1.5; recordLevel(G.level, true); } // first across the flag ends the race (short celebration, then results)
 }
 function levelClear() {
@@ -1064,10 +1110,50 @@ function trySpawn() {
   L.mobs.push(m); burst(midX(m), midY(m), '#b36bff', 8, 140, 3);
   return true;
 }
+// ---------- character customizer (before every game / race) ----------
+const CROWS = ['NAME', 'PRESET', 'HAT', 'HAT COLOUR', 'SHIRT', 'SHORTS', 'OUTFIT', 'SKIN', 'HAIR', 'RACE TRAIL', 'RACE NUMBER'];
+function cycle(list, v, d) { const i = list.indexOf(v); return list[(i + d + list.length) % list.length]; }
+function changeRow(c, row, d) {
+  const key = { 'HAT COLOUR': 'hatColor', SHIRT: 'shirt', SHORTS: 'pants', SKIN: 'skin', HAIR: 'hair' }[row];
+  if (key) c[key] = (c[key] + d + PAL[key].length) % PAL[key].length;
+  else if (row === 'PRESET') { const i = (PRESETS.findIndex(q => q.preset === c.preset) + d + PRESETS.length) % PRESETS.length; Object.assign(c, PRESETS[i]); }
+  else if (row === 'HAT') c.hat = cycle(HATS, c.hat, d);
+  else if (row === 'OUTFIT') c.outfit = cycle(OUTFITS, c.outfit, d);
+  else if (row === 'RACE TRAIL') c.trail = cycle(TRAILS, c.trail, d);
+  else if (row === 'RACE NUMBER') c.number = (c.number + d + 100) % 100;
+  if (row !== 'NAME' && row !== 'RACE NUMBER' && row !== 'PRESET') c.preset = 'CUSTOM';
+}
+function updateCustom() {
+  const U = G.cust;
+  if (U.typing >= 0) { // typing a name: letters, digits, space, backspace; Enter/Esc to finish
+    const c = G.chars[U.typing];
+    for (const code in pressed) {
+      if (code === 'Enter' || code === 'NumpadEnter' || code === 'Escape') { c.name = c.name.trim() || (U.typing ? 'PLAYER 2' : 'PLAYER 1'); U.typing = -1; SFX.menu(); break; }
+      if (code === 'Backspace') c.name = c.name.slice(0, -1);
+      else if (c.name.length < 10) {
+        if (/^Key[A-Z]$/.test(code)) c.name += code[3];
+        else if (/^Digit[0-9]$/.test(code)) c.name += code[5];
+        else if (code === 'Space' && c.name.length) c.name += ' ';
+        else if (code === 'Minus') c.name += '-';
+      }
+    }
+    return;
+  }
+  for (let i = 0; i < G.players; i++) {
+    const k = ctrlOf({ id: i }), c = G.chars[i], row = CROWS[U.sel[i]];
+    if (hit1(k.j[0])) { U.sel[i] = (U.sel[i] + CROWS.length - 1) % CROWS.length; SFX.menu(); }
+    if (tapped(k.c)) { U.sel[i] = (U.sel[i] + 1) % CROWS.length; SFX.menu(); }
+    if (tapped(k.l)) { changeRow(c, row, -1); SFX.menu(); }
+    if (tapped(k.r)) { changeRow(c, row, 1); SFX.menu(); }
+    if (row === 'NAME' && tapped(k.a)) { U.typing = i; SFX.menu(); return; }
+  }
+  if (hit1('Escape')) { G.state = 'maps'; return; }
+  if (hit1('Space')) { store.set('bb_chars', G.chars); newGame(); }
+}
 function update(dt) {
   if (hit1('KeyM')) setMuted(!muted);
   if (G.msg) { G.msg.t -= dt; if (G.msg.t <= 0) G.msg = null; }
-  setSong(G.state === 'title' || G.state === 'maps' ? 'title' : G.state === 'win' || G.state === 'results' ? 'win' : G.state === 'over' ? null
+  setSong(G.state === 'title' || G.state === 'maps' || G.state === 'custom' ? 'title' : G.state === 'win' || G.state === 'results' ? 'win' : G.state === 'over' ? null
     : G.lvl ? { over: 'over', night: 'boss', nether: 'nether', end: 'end', cave: 'cave' }[G.lvl.theme] : 'title');
   if (G.state === 'title') {
     if (hit1('KeyL') && continueRun()) return;
@@ -1085,9 +1171,10 @@ function update(dt) {
     if (hit1('KeyR')) { G.race = !G.race; if (G.race) G.players = 2; SFX.menu(); }
     if (hit1('KeyC')) { G.swap = !G.swap; store.set('bb_swap', G.swap); SFX.menu(); }
     if (hit1('Escape', 'Backspace')) G.state = 'title';
-    if (hit1('Enter', 'Space', 'NumpadEnter')) newGame();
+    if (hit1('Enter', 'Space', 'NumpadEnter')) { G.state = 'custom'; G.cust = { sel: [0, 0], typing: -1 }; SFX.menu(); }
     return;
   }
+  if (G.state === 'custom') { updateCustom(); return; }
   if (G.state === 'pause') { if (hit1('KeyP', 'Escape')) G.state = 'play'; if (hit1('KeyQ')) G.state = 'title'; return; }
   if (G.state === 'shop') {
     if (hit1('ArrowUp', 'KeyW')) G.shopSel = (G.shopSel + SHOP.length - 1) % SHOP.length;
@@ -1238,17 +1325,39 @@ function drawHero(p, x, y) {
   }
 }
 function drawHeroBody(p, x, y) {
-  const cap = p.id ? '#2fbf4a' : '#e53935', f = p.face, walk = Math.abs(p.vx) > 20 && p.onGround ? Math.floor(p.anim * 12) % 2 : 0;
-  rect(x + 3, y, 16, 6, cap); rect(f > 0 ? x + 12 : x, y + 4, 10, 3, cap);
-  rect(x + 4, y + 6, 14, 8, '#ffcc99'); rect(f > 0 ? x + 13 : x + 7, y + 8, 2, 3, '#222');
-  rect(f > 0 ? x + 4 : x + 16, y + 6, 2, 5, '#6b3a1a');
-  rect(x + 3, y + 14, 16, 6, cap); rect(x + 5, y + 16, 12, 9, '#1e4fd6');
-  rect(x + 6, y + 17, 2, 2, '#ffd84a'); rect(x + 14, y + 17, 2, 2, '#ffd84a');
-  rect(x + 1, y + 16, 3, 5, '#ffcc99'); rect(x + 18, y + 16, 3, 5, '#ffcc99');
-  rect(x + 5, y + 25 - walk, 5, 3, '#1e4fd6'); rect(x + 12, y + 25 - (1 - walk), 5, 3, '#1e4fd6');
+  const C = p.char || charOf(p), f = p.face, walk = Math.abs(p.vx) > 20 && p.onGround ? Math.floor(p.anim * 12) % 2 : 0;
+  const hatC = PAL.hatColor[C.hatColor], shirt = PAL.shirt[C.shirt], pants = PAL.pants[C.pants], skin = PAL.skin[C.skin], hair = PAL.hair[C.hair];
+  const dark = c => c === '#212121' ? '#555' : '#222';
+  // hair (long for dresses) behind the head
+  if (C.outfit === 'dress') rect(f > 0 ? x + 3 : x + 13, y + 4, 6, 12, hair);
+  // head
+  rect(x + 4, y + 6, 14, 8, skin); rect(f > 0 ? x + 13 : x + 7, y + 8, 2, 3, '#222');
+  rect(f > 0 ? x + 4 : x + 16, y + 6, 2, 5, hair);
+  // hat
+  if (C.hat === 'cap') { rect(x + 3, y, 16, 6, hatC); rect(f > 0 ? x + 12 : x, y + 4, 10, 3, hatC); }
+  else if (C.hat === 'helmet') { rect(x + 2, y, 18, 7, hatC); rect(x + 2, y + 5, 18, 2, dark(hatC)); rect(f > 0 ? x + 16 : x + 2, y + 2, 4, 2, '#cfd8dc'); }
+  else if (C.hat === 'bandana') { rect(x + 3, y + 1, 16, 5, hatC); rect(f > 0 ? x : x + 18, y + 3, 4, 3, hatC); rect(f > 0 ? x - 2 : x + 20, y + 5, 3, 3, hatC); }
+  else if (C.hat === 'crown') { rect(x + 3, y + 1, 16, 5, hair); rect(x + 5, y - 2, 12, 4, '#fdd835'); rect(x + 5, y - 5, 2, 3, '#fdd835'); rect(x + 10, y - 5, 2, 3, '#fdd835'); rect(x + 15, y - 5, 2, 3, '#fdd835'); rect(x + 10, y - 1, 2, 2, '#e53935'); }
+  else if (C.hat === 'beanie') { rect(x + 3, y - 1, 16, 7, hatC); rect(x + 3, y + 4, 16, 2, '#ffffff'); rect(x + 9, y - 4, 4, 3, '#ffffff'); }
+  else if (C.hat === 'headband') { rect(x + 3, y + 1, 16, 4, hair); rect(x + 3, y + 3, 16, 2, hatC); rect(f > 0 ? x : x + 18, y + 3, 4, 2, hatC); }
+  else rect(x + 3, y + 1, 16, 5, hair);
+  // body by outfit
+  rect(x + 1, y + 16, 3, 5, skin); rect(x + 18, y + 16, 3, 5, skin); // hands
+  if (C.outfit === 'overalls') {
+    rect(x + 3, y + 14, 16, 6, shirt); rect(x + 5, y + 16, 12, 9, pants);
+    rect(x + 6, y + 17, 2, 2, '#ffd84a'); rect(x + 14, y + 17, 2, 2, '#ffd84a');
+  } else if (C.outfit === 'dress') {
+    rect(x + 4, y + 14, 14, 6, shirt); rect(x + 3, y + 20, 16, 3, shirt); rect(x + 2, y + 23, 18, 3, shirt); rect(x + 5, y + 19, 12, 1, pants);
+  } else if (C.outfit === 'jacket') {
+    rect(x + 3, y + 14, 16, 9, shirt); rect(x + 10, y + 14, 2, 9, '#eeeeee'); rect(x + 3, y + 14, 2, 7, dark(shirt)); rect(x + 17, y + 14, 2, 7, dark(shirt)); rect(x + 5, y + 22, 12, 3, pants);
+  } else { // tank top
+    rect(x + 3, y + 14, 16, 3, skin); rect(x + 6, y + 14, 10, 9, shirt); rect(x + 5, y + 22, 12, 3, pants);
+  }
+  // legs (shorts colour) and shoes
+  rect(x + 5, y + 25 - walk, 5, 3, C.outfit === 'dress' ? skin : pants); rect(x + 12, y + 25 - (1 - walk), 5, 3, C.outfit === 'dress' ? skin : pants);
   rect(x + 4, y + 28 - walk, 6, 2, '#5a3510'); rect(x + 12, y + 28 - (1 - walk), 6, 2, '#5a3510');
   if (p.star > 0) { cx.globalAlpha = 0.45; rect(x, y, 22, 30, `hsl(${(p.anim * 720) % 360},100%,60%)`); cx.globalAlpha = 1; }
-  if (p.power === 'fire') rect(x + 3, y, 16, 2, '#ff9b3d');
+  if (p.power === 'fire') { cx.globalAlpha = 0.5; rect(x + 3, y + 14, 16, 2, '#ff9b3d'); cx.globalAlpha = 1; }
   // sword
   const s = SWORDS[G.sword];
   if (p.atk > 0) {
@@ -1267,7 +1376,7 @@ function drawHeroBody(p, x, y) {
     if (p.blocking) { cx.globalAlpha = 0.25; rect(sx - 2, y + 6, 14, 22, '#bfe3ff'); cx.globalAlpha = 1; }
   }
   // name tag in co-op
-  if (G.players === 2) { cx.fillStyle = cap; cx.font = 'bold 10px monospace'; cx.textAlign = 'center'; cx.fillText('P' + (p.id + 1), x + 11, y - 6); }
+  if (G.players === 2 && !p.noTag) { cx.fillStyle = p.id ? '#5ef07a' : '#ff8a8a'; cx.font = 'bold 9px monospace'; cx.textAlign = 'center'; cx.fillText((G.race ? '#' + C.number + ' ' : '') + C.name, x + 11, y - 8); }
 }
 function drawMob(m, x, y) {
   const f = m.face, step = Math.floor(m.anim * 8) % 2;
@@ -1484,7 +1593,7 @@ function drawHUD() {
   rect(0, 0, W, 44, 'rgba(0,0,0,.45)');
   G.p.forEach((p, i) => {
     const bx = i === 0 ? 12 : W - 230;
-    text((p.id ? 'P2 GREEN  ' : 'P1 RED  ') + (p.score || 0) + ' pts' + (G.race ? `  x${p.lives}  KEYS ${p.keys || 0}` : ''), bx, 16, 12, p.id ? '#5ef07a' : '#ff6b6b');
+    text(nameOf(p).slice(0, 10) + '  ' + (p.score || 0) + ' pts' + (G.race ? `  x${p.lives}  KEYS ${p.keys || 0}` : ''), bx, 16, 12, p.id ? '#5ef07a' : '#ff6b6b');
     if (p.finished) { text(`FINISHED ${p.place === 1 ? '1ST' : '2ND'}  ${fmtTime(p.finishT)}`, bx, 36, 14, '#ffd84a'); return; }
     if (p.dead) { text(p.respawn > 0 ? 'RESPAWNING...' : 'OUT', bx, 36, 14, '#aaa'); return; }
     for (let h = 0; h < p.maxhp; h++) heart(bx + h * 16, 22, h < p.hp);
@@ -1588,6 +1697,38 @@ function drawMaps() {
   text(`SETTINGS > CONTROLS:   P1 = ${CTRL[G.swap ? 1 : 0].name},  P2 = ${CTRL[G.swap ? 0 : 1].name}   (C to swap)`, W / 2, 470, 14, '#fff', 'center');
   text('LEFT/RIGHT world   UP/DOWN mode   ENTER start   ESC back', W / 2, 515, 12, '#ffd84a', 'center');
 }
+function drawCustom() {
+  drawTitle(); rect(0, 0, W, H, 'rgba(5,5,15,.86)');
+  const t = performance.now() / 1000, U = G.cust;
+  text(G.race ? 'DRAG RACE: DESIGN YOUR RACERS' : 'CUSTOMIZE YOUR FIGHTER' + (G.players === 2 ? 'S' : ''), W / 2, 40, 26, '#ffd84a', 'center');
+  for (let i = 0; i < G.players; i++) {
+    const c = G.chars[i], px0 = G.players === 2 ? (i ? 492 : 24) : 258, k = ctrlOf({ id: i }), col = i ? '#5ef07a' : '#ff8a8a';
+    panel(px0, 56, 444, 456);
+    text(`P${i + 1} · ${KEYNAME[k.j[0]]}/${KEYNAME[k.c[0]]} select · ${KEYNAME[k.l[0]]}/${KEYNAME[k.r[0]]} change · ${KEYNAME[k.a[0]]} edit name`, px0 + 222, 76, 10, col, 'center');
+    // live preview, running in place
+    const fake = { id: i, face: 1, vx: 200, onGround: true, anim: t, inv: 0, star: 0, w: 22, h: 30, char: c, noTag: true };
+    cx.save(); cx.translate(px0 + 222 - 35, 92); cx.scale(3.2, 3.2); drawHeroBody(fake, 0, 0); cx.restore();
+    const typing = U.typing === i;
+    text(`#${c.number} ${c.name}${typing && Math.floor(t * 2) % 2 ? '_' : ''}`, px0 + 222, 210, 18, typing ? '#7fe0ff' : col, 'center');
+    CROWS.forEach((row, r) => {
+      const y = 238 + r * 24, sel = U.sel[i] === r;
+      if (sel) rect(px0 + 12, y - 16, 420, 22, 'rgba(255,216,74,.16)');
+      text(row, px0 + 24, y, 12, sel ? '#fff' : '#aaa');
+      let val = '', sw = null;
+      if (row === 'NAME') val = typing ? 'typing... Enter to finish' : c.name;
+      else if (row === 'PRESET') val = c.preset;
+      else if (row === 'HAT') val = c.hat.toUpperCase();
+      else if (row === 'OUTFIT') val = c.outfit.toUpperCase();
+      else if (row === 'RACE TRAIL') val = c.trail.toUpperCase();
+      else if (row === 'RACE NUMBER') val = '#' + c.number;
+      else { const key = { 'HAT COLOUR': 'hatColor', SHIRT: 'shirt', SHORTS: 'pants', SKIN: 'skin', HAIR: 'hair' }[row]; sw = PAL[key][c[key]]; }
+      if (sw) { rect(px0 + 330, y - 12, 40, 14, sw); cx.strokeStyle = '#fff'; cx.lineWidth = 1; cx.strokeRect(px0 + 330.5, y - 11.5, 39, 13); }
+      else text(val, px0 + 350, y, 12, sel ? '#ffd84a' : '#ddd', 'center');
+      if (sel && row !== 'NAME') { text('◀', px0 + 290, y, 12, '#ffd84a', 'center'); text('▶', px0 + 410, y, 12, '#ffd84a', 'center'); }
+    });
+  }
+  text(U.typing >= 0 ? 'Type a name (letters, numbers, space) · Enter to finish' : 'SPACE: START' + (G.race ? ' THE RACE' : '') + '   ESC: BACK', W / 2, 532, 14, '#fff', 'center');
+}
 function drawShop() {
   panel(W / 2 - 280, 110, 560, 330);
   text('BLOCKSMITH SHOP', W / 2, 150, 28, '#ffd84a', 'center');
@@ -1603,6 +1744,7 @@ function drawShop() {
 function render() {
   if (G.state === 'title') { drawTitle(); return; }
   if (G.state === 'maps') { drawMaps(); return; }
+  if (G.state === 'custom') { drawCustom(); return; }
   if (G.split && G.cams) {
     const save = G.cam;
     for (let i = 0; i < 2; i++) {
@@ -1620,10 +1762,10 @@ function render() {
     // the winner is whoever crossed the flag first; if nobody finished, the higher score wins
     const ranked = [...G.p].sort((a, b) => (a.finished ? a.place : 9) - (b.finished ? b.place : 9) || b.score - a.score);
     const win = ranked[0], tie = !win.finished && ranked[0].score === ranked[1].score;
-    text(tie ? "IT'S A TIE!" : `${win.id ? 'P2 GREEN' : 'P1 RED'} WINS!`, W / 2, 200, 26, tie ? '#fff' : win.id ? '#5ef07a' : '#ff6b6b', 'center');
+    text(tie ? "IT'S A TIE!" : `${nameOf(win)} WINS!`, W / 2, 200, 26, tie ? '#fff' : win.id ? '#5ef07a' : '#ff6b6b', 'center');
     ranked.forEach((p, i) => {
       const y = 250 + i * 56, col = p.id ? '#5ef07a' : '#ff6b6b';
-      text(`${i === 0 && !tie ? '1ST' : '2ND'}  ${p.id ? 'P2 GREEN' : 'P1 RED'}`, W / 2 - 270, y, 20, col);
+      text(`${i === 0 && !tie ? '1ST' : '2ND'}  #${charOf(p).number} ${nameOf(p)}`, W / 2 - 270, y, 20, col);
       text(`${p.score} pts`, W / 2 + 270, y, 20, '#fff', 'right');
       text(p.finished ? `TIME ${fmtTime(p.finishT)}  (finish bonus +${p.bonus})` : `did not finish  (race ended at ${fmtTime(G.raceEnd || G.time)})`, W / 2 - 270, y + 20, 12, '#ccc');
     });

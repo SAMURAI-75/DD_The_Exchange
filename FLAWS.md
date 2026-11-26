@@ -132,6 +132,16 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 92 | A finished or failed run left a stale "continue" | The save is cleared on win and on game over; race mode is never saved | 🛡️ |
 | 93 | localStorage blocked (private mode) | All reads and writes are wrapped in try/catch; the game still runs, just without saving | 🛡️ |
 
+## Round 9: character customizer
+
+| # | Flaw | Fix | Status |
+|---|---|---|---|
+| 94 | Players wanted their own look and name (Mini Militia-style) | A **customizer before every game and race**: name, 7 original presets, hat (cap/helmet/bandana/crown/beanie/headband/none), hat colour, shirt, shorts, outfit (overalls/dress/jacket/tank), skin, hair, race trail (sparkle/fire/rainbow/smoke), race number. Each player edits with their own keys. Names appear in the HUD, above heads, and on the race results. Saved in the browser. Tested: typed names for both players, changed presets/colours/trail, started the race | ✅ tested |
+| 95 | Real Mario characters requested | Not used: they are Nintendo's characters, and copying existing work is against the event rules. All presets are original designs (one preset was recoloured to avoid looking like an existing character) | 🛡️ by design |
+| 96 | Name typing clashing with game keys (WASD/Enter) | While a name is being typed, every other input on the screen is ignored; Enter/Esc finishes. Only letters, digits, space and '-' are allowed, max 10 characters; an empty name falls back to PLAYER 1/2 | ✅ tested |
+| 97 | Bad saved character data (hand-edited storage) | Every field is validated against the allowed lists and ranges, and names are stripped of unsafe characters | 🛡️ |
+| 98 | Startup crash: characters loaded before presets existed (found during testing) | Fixed the load order; tested: game boots with no errors | ✅ tested |
+
 ## Known limitations (honest list)
 
 | # | Limitation | Status |

@@ -34,7 +34,7 @@
     python3 -m http.server 8000
     ```
     Then open http://localhost:8000 in your browser.
-- Press **Enter** on the title screen, pick a world, mode and number of players, and press **Enter** again to play. Press **L** on the title screen to continue a saved run.
+- Press **Enter** on the title screen, pick a world, mode and number of players, press **Enter**, then design your character(s) and press **Space** to play. Press **L** on the title screen to continue a saved run.
 
 ---
 
@@ -55,6 +55,10 @@ Works offline. Progress is saved in your browser: the home screen lists every le
 | Sticky bomb (Crazy only) | E | ' (quote) |
 
 P / Esc to pause · M to mute. On the **world select screen**: ← / → world, ↑ / ↓ mode, 1 / 2 players, **R** co-op / drag race, **C** swap which player uses WASD vs arrows (saved), Enter to start.
+
+### Character customizer
+
+Before every game or race, each player picks a name, a preset and customizes hat, colours, shorts, outfit (overalls / dress / jacket / tank), skin, hair, race trail and race number (inspired by Mini Militia's avatar customization). Each player edits with their own keys; press their sword key on NAME to type. All characters are original designs.
 
 ### Game types
 
