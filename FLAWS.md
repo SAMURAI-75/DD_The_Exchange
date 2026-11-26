@@ -93,11 +93,30 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 71 | Gates, doors and key-room logic must not regrow | Only blocks broken by blasts/bumps regrow; opened gates and doors stay open | 🛡️ |
 | 72 | 3 new levels must be completable | Mineshaft Caves (Overworld 3), Nether Fortress (Nether 2), End Islands (End 1): each has a flag, 2 keys + 2 doors, max pit 3 blocks. Tested world progression Overworld 1 → 2 → Caves → Boss with the shop between | ✅ tested |
 
+## Round 5 of building: race mode, crouch, missiles, endermen, settings
+
+| # | Flaw | Fix | Status |
+|---|---|---|---|
+| 73 | **Drag race** needed per-player rules: separate lives, checkpoints, keys and points | In race mode each player has their own lives, checkpoint, keys and score. Always split screen (P1 left / P2 right). No team gates or partner respawn. Tested: both finish, places 1st/2nd, results screen | ✅ tested |
+| 74 | Race could hang if one player never finishes | When the first player crosses the flag, a 30 s countdown starts; the race also ends if everyone has finished or is out | 🛡️ |
+| 75 | Finished racer still targeted by mobs / taking damage | Finished players are excluded from targeting, damage and the alive checks | 🛡️ |
+| 76 | Points must credit the right player | Kills are credited to whoever landed the hit (sword, stomp, star, bullet, bomb, fireball, returned ghast fireball). Tested: sword kill +100 | ✅ tested |
+| 77 | **Crouch** conflicted with the shield on S / ↓ | Shield moved to Q (P1) and / (P2); S / ↓ is crouch. Crouching shrinks the hitbox (18 px), slows you, blocks jumping, and you stay down under low ceilings | ✅ tested |
+| 78 | **Missiles** from cannons: crouch must actually dodge | Tested with a real cannon shot: standing = HIT, crouching = missed (an earlier 0.01 px overlap bug was fixed) | ✅ tested |
+| 79 | Missiles flying forever / through walls | They burst on any solid block (incl. doors and gates) or after 9 s; you can stomp them or cut them with a sword | 🛡️ |
+| 80 | **Endermen** teleport after 5 s next to you | A circular purple progress ring fills over the player; it drains when you step away. Tested: teleported at exactly 5.0 s to column 110 (first half of the 240-wide level), landing on solid ground | ✅ tested |
+| 81 | Teleport into a pit, wall or locked door | Teleport spot must have solid ground with 2 free blocks above, and is never a door or gate column | 🛡️ |
+| 82 | Hitting an enderman | It teleports 4–7 blocks away (tested: moved 168 px) | ✅ tested |
+| 83 | **Control settings**: swap WASD / arrows | Press C on the world screen; saved in localStorage. The title-screen controls guide updates to match | ✅ tested |
+| 84 | Menu didn't explain controls | Title screen now has a full controls table: move, jump, crouch, sword, shield, fire/gun, bomb, with hints | ✅ |
+
 ## Known limitations (honest list)
 
 | # | Limitation | Status |
 |---|---|---|
 | 34 | No touch/gamepad controls; keyboard only | ⚠️ |
+| 85 | Big (mushroom) players are too tall to fully duck under missiles | ⚠️ design choice |
+| 86 | Race mode uses the first level of the chosen world only | ⚠️ scope |
 | 35 | The shield blocks from all directions (simpler, and more forgiving for players) | ⚠️ design choice |
 | 36 | Boss orbs pass through blocks on purpose (ghost) | ⚠️ design choice |
 | 37 | ? block contents are random each run, not seeded | ⚠️ |
