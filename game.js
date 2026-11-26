@@ -136,9 +136,9 @@ const DIFF = {
 };
 const DKEYS = ['easy', 'normal', 'hard', 'crazy'];
 const MAPS = [
-  { name: 'OVERWORLD', stars: 1, tier: 'EASY', levels: [1, 2, 3], sword: 0, color: '#7fd650', desc: ['Zombies, creepers, skeletons', 'Boss: the Ghost Miner'] },
-  { name: 'THE NETHER', stars: 2, tier: 'MEDIUM', levels: [4], sword: 1, color: '#ff6b3d', desc: ['Lava pits, ghasts & blazes', 'Swing at ghast fireballs!'] },
-  { name: 'THE END', stars: 3, tier: 'HARD', levels: [5], sword: 2, color: '#c77dff', desc: ['Smash the end crystals', 'Boss: the Ender Dragon'] },
+  { name: 'OVERWORLD', stars: 1, tier: 'EASY', levels: [1, 2, 3], sword: 0, color: '#7fd650', insp: 'Super Mario Bros. 1-1 x Minecraft Overworld', desc: ['Zombies, creepers, skeletons', 'Boss: the Ghost Miner'] },
+  { name: 'THE NETHER', stars: 2, tier: 'MEDIUM', levels: [4], sword: 1, color: '#ff6b3d', insp: 'Mario lava castles x Minecraft Nether', desc: ['Lava pits, ghasts & blazes', 'Swing at ghast fireballs!'] },
+  { name: 'THE END', stars: 3, tier: 'HARD', levels: [5], sword: 2, color: '#c77dff', insp: 'Mario boss battles x Minecraft The End', desc: ['Smash the end crystals', 'Boss: the Ender Dragon'] },
 ];
 const THEME = { 1: 'over', 2: 'over', 3: 'night', 4: 'nether', 5: 'end' };
 const SWORDS = [
@@ -149,7 +149,7 @@ const SWORDS = [
 ];
 const SHIELD_DMG = { arrow: 34, zombie: 15, creeper: 60, boss: 25, skeleton: 15, ghast: 40, blaze: 20, bomb: 40 };
 const BLAST_R = 6 * T;
-const SOLID = new Set(['#', 'X', 'B', '?', 'T', 'U', 'G', 'O']);
+const SOLID = new Set(['#', 'X', 'B', '?', 'T', 'U', 'G', 'O', 'W', 'L']);
 const BREAKABLE = new Set(['#', 'B', '?', 'T', 'U']);
 
 // ---------- level generation (seeded => same level every run) ----------
@@ -158,7 +158,7 @@ function makeLevel(n) {
   if (n === 5) return endArena();
   const nether = n === 4;
   const rng = mulberry(n * 9973 + 7), ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
-  const w = n === 1 ? 150 : nether ? 170 : 190;
+  const w = n === 1 ? 230 : nether ? 250 : 270;
   const g = Array.from({ length: ROWS }, () => new Array(w).fill('.'));
   const set = (x, y, c) => { if (x >= 0 && x < w && y >= 0 && y < ROWS) g[y][x] = c; };
   for (let x = 0; x < w; x++) { set(x, 15, '#'); set(x, 16, 'X'); }
@@ -195,8 +195,37 @@ function makeLevel(n) {
   const protect = (a, b) => { for (let c = a; c <= b; c++) { set(c, 15, 'G'); set(c, 16, 'X'); for (let y = 12; y < 15; y++) if (g[y][c] !== 'o') g[y][c] = '.'; for (let y = 0; y < 15; y++) if ('zcsgb'.includes(g[y][c])) g[y][c] = '.'; } };
   const cp = Math.floor(w / 2);
   protect(0, 8); protect(cp - 2, cp + 2);
+  // KEY ROOMS + LOCKED DOORS: find the key inside a room to open the door further on
+  const doors = [];
+  const clearCols = (a, b, ground) => { for (let c = a; c <= b; c++) { set(c, 15, ground); set(c, 16, 'X'); for (let y = 0; y < 15; y++) g[y][c] = '.'; } };
+  const keyRoom = x0 => {
+    clearCols(x0 - 2, x0 + 13, '#');
+    for (let c = x0; c <= x0 + 11; c++) set(c, 9, 'B');          // ceiling
+    for (let y = 10; y <= 12; y++) set(x0, y, 'B');               // left wall, open at the bottom (entrance)
+    for (let y = 10; y <= 12; y++) set(x0 + 11, y, 'B');          // right wall, open at the bottom (exit), so the path never dead-ends
+    set(x0 + 4, 12, '?'); set(x0 + 5, 12, 'B'); set(x0 + 6, 12, 'B');
+    for (let c = x0 + 2; c <= x0 + 9; c += 2) set(c, 11, 'o');
+    set(x0 + 9, 14, 'y');                                         // the key (on the floor, on the main path)
+    set(x0 + 3, 14, 'z'); set(x0 + 7, 14, nether ? 'b' : 's');
+  };
+  const lockDoor = d => { clearCols(d - 2, d + 2, 'G'); for (let y = 0; y < 15; y++) set(d, y, 'L'); doors.push({ col: d, open: false }); };
+  keyRoom(Math.floor(w * 0.14)); lockDoor(Math.floor(w * 0.40));
+  keyRoom(Math.floor(w * 0.56)); lockDoor(Math.floor(w * 0.82));
+  // 2-PLAYER TEAMWORK: gates that need both players (simultaneous pressure plates, then timed levers)
+  const gates = [];
+  if (G.players === 2) {
+    const flat = (a, b) => { for (let c = a; c <= b; c++) { set(c, 15, 'G'); set(c, 16, 'X'); for (let y = 0; y < 15; y++) g[y][c] = '.'; } };
+    const g0 = Math.floor(w * 0.3), g1 = Math.floor(w * 0.7);
+    flat(g0 - 9, g0 + 2); for (let y = 0; y < 15; y++) set(g0, y, 'W');
+    for (let c = g0 - 4; c <= g0 - 2; c++) set(c, 11, 'G');
+    gates.push({ col: g0, type: 'plates', open: false, on: [false, false], plates: [{ x: (g0 - 7) * T + 4, y: 15 * T - 6 }, { x: (g0 - 3) * T + 4, y: 11 * T - 6 }] });
+    flat(g1 - 11, g1 + 2); for (let y = 0; y < 15; y++) set(g1, y, 'W');
+    for (let c = g1 - 3; c <= g1 - 1; c++) set(c, 11, 'G');
+    gates.push({ col: g1, type: 'levers', open: false, levers: [{ x: (g1 - 10) * T + 8, y: 15 * T - 30, t: 0 }, { x: (g1 - 2) * T + 8, y: 11 * T - 30, t: 0 }] });
+  }
   set(3, 14, '1');
-  return finalize(g, w, n);
+  const L = finalize(g, w, n); L.gates = gates; L.doors = doors;
+  return L;
 }
 function bossArena() {
   const w = 30, g = Array.from({ length: ROWS }, () => new Array(w).fill('.'));
@@ -224,12 +253,13 @@ function endArena() {
   return finalize(g, w, 5);
 }
 function finalize(g, w, n) {
-  const L = { n, w, g, theme: THEME[n], mobs: [], items: [], flagX: -1, spawn: { x: 3 * T, y: 14 * T }, cpCol: Math.floor(w / 2) };
+  const L = { n, w, g, theme: THEME[n], gates: [], doors: [], mobs: [], items: [], flagX: -1, spawn: { x: 3 * T, y: 14 * T }, cpCol: Math.floor(w / 2) };
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < w; x++) {
     const c = g[y][x];
     if ('zcsgbk'.includes(c) && c !== '.') { L.mobs.push(makeMob({ z: 'zombie', c: 'creeper', s: 'skeleton', g: 'ghast', b: 'blaze', k: 'crystal' }[c], x * T + 5, y * T + 1)); g[y][x] = '.'; }
     else if (c === 'o') { L.items.push(makeItem('coin', x * T + 8, y * T + 6, true)); g[y][x] = '.'; }
     else if (c === 'S') { L.items.push(makeItem('shield', x * T + 6, y * T + 8, false)); g[y][x] = '.'; }
+    else if (c === 'y') { L.items.push(makeItem('key', x * T + 6, y * T + 6, true)); g[y][x] = '.'; }
     else if (c === 'F') { L.flagX = x * T + 12; g[y][x] = '.'; }
     else if (c === '1') { L.spawn = { x: x * T + 5, y: y * T + 1 }; g[y][x] = '.'; }
   }
@@ -289,7 +319,7 @@ function makeItem(kind, x, y, fixed) { return { kind, x, y, w: kind === 'coin' ?
 const G = {
   state: 'title', players: 1, diffIdx: 1, diff: DIFF.normal, level: 1, lvl: null,
   p: [], coins: 0, lives: 3, sword: 0, cam: 0, shake: 0, proj: [], parts: [], texts: [], msg: null,
-  timer: 0, time: 0, cp: null, overT: 0, best: null, shopSel: 0, map: 0, li: 0, spawnT: 0,
+  timer: 0, time: 0, cp: null, overT: 0, best: null, shopSel: 0, map: 0, li: 0, spawnT: 0, split: false, cams: null, viewL: 0, viewR: 960,
 };
 const bestKey = () => 'bb_best_' + G.map + '_' + DKEYS[G.diffIdx];
 
@@ -309,7 +339,7 @@ function loadLevel(n) {
     Object.assign(p, { x: G.lvl.spawn.x + i * 30, y: G.lvl.spawn.y, vx: 0, vy: 0, dead: false, respawn: 0, maxhp: Math.max(3, p.maxhp), inv: 1, kb: 0, atk: 0, star: 0 });
     p.hp = p.maxhp; unstick(p);
   });
-  G.cam = 0;
+  G.keys = 0; G.cam = 0; G.split = false; G.cams = null; G.viewL = 0; G.viewR = W;
   banner(n === 3 ? 'BOSS: THE GHOST MINER' : n === 5 ? 'THE END: SLAY THE DRAGON' : n === 4 ? 'THE NETHER' : 'OVERWORLD ' + n);
   if (G.diff.crazy) setTimeout(() => banner('CRAZY MODE: GUNS + BOMBS!', 2), 1800);
 }
@@ -370,6 +400,12 @@ function updatePlayer(p, dt) {
   const g = (!held(k.j) && p.vy < 0) ? GRAV * 2.2 : GRAV;
   p.vy += g * dt;
   moveBody(p, dt);
+  const mate = G.p.find(q => q !== p && !q.dead);
+  if (mate && p.vy > 0 && overlap(p, mate) && p.y + p.h - mate.y < 14) {
+    p.y = mate.y - p.h - 0.5;
+    if (held(k.j)) { p.vy = -1050; SFX.power(); floatText(midX(p), p.y - 8, 'TEAM BOOST!', '#7fe0ff'); burst(midX(p), p.y + p.h, '#7fe0ff', 10, 160, 3); }
+    else { p.vy = -420; SFX.jump(); }
+  }
   // attack
   if (tapped(k.a) && p.atkCd <= 0) { p.atk = 0.18; p.atkCd = 0.33; p.hitSet = new Set(); SFX.swing(); }
   if (p.atk > 0) swordHits(p);
@@ -390,7 +426,6 @@ function updatePlayer(p, dt) {
     G.proj.push({ kind: 'fire', mine: true, x: p.face > 0 ? p.x + p.w : p.x - 10, y: p.y + 8, w: 10, h: 10, vx: p.face * 430, vy: 0, life: 2.5, owner: p });
   }
   // coop: keep both players on screen
-  if (alive().length > 1) { p.x = clamp(p.x, G.cam + 2, G.cam + W - p.w - 2); }
   p.x = clamp(p.x, 0.01, G.lvl.w * T - p.w - 0.01);
   if (p.y > ROWS * T + 60) killPlayer(p);
   if (G.lvl.theme === 'nether' && p.y + p.h > 15 * T + 14) { burst(midX(p), 15 * T + 10, '#ff8a1a', 20, 260, 5); killPlayer(p); } // lava
@@ -406,6 +441,8 @@ function swordHits(p) {
     if (m.type === 'boss' && m.fade > 0) continue;
     p.hitSet.add(m); hurtMob(m, s.dmg, p.face * 240);
   }
+  for (const gt of G.lvl.gates) if (!gt.open && gt.type === 'levers') for (const lv of gt.levers)
+    if (lv.t <= 0 && overlap(box, { x: lv.x, y: lv.y, w: 16, h: 30 })) { lv.t = 1.0; SFX.bump(); floatText(lv.x + 8, lv.y - 6, 'FLIP!', '#ffd84a'); }
   for (const pr of G.proj) {
     if (pr.mine || !overlap(box, pr)) continue;
     if (pr.kind === 'gfire') { // return to sender: knock ghast fireballs back
@@ -415,6 +452,7 @@ function swordHits(p) {
   }
 }
 function pickup(p, it) {
+  if (it.kind === 'key') { G.keys++; SFX.power(); banner('KEY FOUND! UNLOCK THE DOOR', 1.6); burst(midX(it), midY(it), '#ffd84a', 14, 180, 3); it.taken = true; return; }
   if (it.kind === 'coin') { G.coins++; SFX.coin(); burst(midX(it), midY(it), '#ffd84a', 5, 100, 2); }
   else if (it.kind === 'shield') {
     const [a, b] = G.diff.wear, hp = 100 - (b > 0 ? irand(a, b) : 0);
@@ -497,7 +535,7 @@ function wander(m, speed) {
   m.vx = m.face * speed;
 }
 function updateMob(m, dt) {
-  if (!m.active) { if (Math.abs(midX(m) - (G.cam + W / 2)) < W * 0.75) m.active = true; else return; }
+  if (!m.active) { if (midX(m) > G.viewL - W * 0.25 && midX(m) < G.viewR + W * 0.25) m.active = true; else return; }
   m.anim += dt; m.hurt = Math.max(0, m.hurt - dt); m.cd -= dt;
   if (m.type === 'boss') return updateBoss(m, dt);
   if (m.type === 'dragon') return updateDragon(m, dt);
@@ -743,7 +781,7 @@ function updateProj(dt) {
         if (hurtPlayer(p, 1, midX(p) - Math.sign(pr.vx || 1) * 10, pr.kind === 'arrow' ? 380 : 300, 220, kind)) pr.life = 0;
       }
     }
-    if (pr.x < G.cam - 300 || pr.x > G.cam + W + 300 || pr.y > H + 100 || pr.y < -300) pr.life = 0;
+    if (pr.x < G.viewL - 300 || pr.x > G.viewR + 300 || pr.y > H + 100 || pr.y < -300) pr.life = 0;
   }
   G.proj = G.proj.filter(p => p.life > 0);
 }
@@ -782,6 +820,41 @@ function buy(i) {
   else if (o.id === 'life') G.lives++;
 }
 
+function updateDoors(dt) {
+  G.lockMsg = Math.max(0, (G.lockMsg || 0) - dt);
+  for (const d of G.lvl.doors) {
+    if (d.open) continue;
+    const near = alive().some(p => Math.abs(midX(p) - (d.col * T + 16)) < 44);
+    if (!near) continue;
+    if (G.keys > 0) {
+      G.keys--; d.open = true; SFX.clear(); banner('DOOR UNLOCKED!', 1.2);
+      for (let y = 0; y < 15; y++) if (tile(d.col, y) === 'L') { setTile(d.col, y, '.'); debris(d.col, y, '#8a5a2b'); }
+    } else if (G.lockMsg <= 0) { G.lockMsg = 3; banner('LOCKED! FIND THE KEY IN THE ROOM', 1.6); SFX.deny(); }
+  }
+}
+function updateGates(dt) {
+  updateDoors(dt);
+  const L = G.lvl; if (!L.gates.length) return;
+  const able = G.p.filter(p => !p.dead || p.respawn > 0).length; // players still in the game
+  for (const gt of L.gates) {
+    if (gt.open) continue;
+    let ok = able < 2; // never soft-lock: if your partner is out, gates unlock
+    if (gt.type === 'plates') {
+      const was = gt.on.slice();
+      gt.on = gt.plates.map(pl => alive().some(p => overlap(p, { x: pl.x, y: pl.y - 4, w: 24, h: 12 })));
+      if (gt.on.some((v, i) => v && !was[i])) SFX.bump();
+      ok = ok || gt.on.every(Boolean);
+    } else {
+      for (const lv of gt.levers) lv.t = Math.max(0, lv.t - dt);
+      ok = ok || gt.levers.every(lv => lv.t > 0);
+    }
+    if (ok) {
+      gt.open = true;
+      for (let y = 0; y < 15; y++) if (tile(gt.col, y) === 'W') { setTile(gt.col, y, '.'); debris(gt.col, y, '#8a8a99'); }
+      SFX.clear(); banner(able < 2 ? 'GATE UNLOCKED (PARTNER OUT)' : 'TEAMWORK! GATE OPEN', 1.6);
+    }
+  }
+}
 // CRAZY MODE horde: keeps ~15 mobs on screen, spawning at the screen edges (never on the safe pads)
 function spawnHorde(dt) {
   if (!G.diff.crazy || G.state !== 'play') return;
@@ -789,11 +862,11 @@ function spawnHorde(dt) {
   for (let tries = 0; tries < 4; tries++) if (trySpawn()) break;
 }
 function trySpawn() {
-  const L = G.lvl, near = L.mobs.filter(m => !m.dead && !['boss', 'dragon', 'crystal'].includes(m.type) && Math.abs(midX(m) - (G.cam + W / 2)) < W).length;
+  const L = G.lvl, near = L.mobs.filter(m => !m.dead && !['boss', 'dragon', 'crystal'].includes(m.type) && midX(m) > G.viewL - W / 2 && midX(m) < G.viewR + W / 2).length;
   if (near >= G.diff.horde) return true;
   const pool = L.theme === 'nether' ? ['zombie', 'zombie', 'ghast', 'blaze', 'skeleton', 'blaze'] : L.theme === 'end' ? ['zombie', 'zombie', 'skeleton', 'creeper'] : ['zombie', 'zombie', 'creeper', 'creeper', 'skeleton'];
   const type = pool[irand(0, pool.length - 1)];
-  const edge = Math.random() < 0.5 ? G.cam - 48 : G.cam + W + 48;
+  const edge = Math.random() < 0.5 ? G.viewL - 48 : G.viewR + 48;
   let col = Math.floor(edge / T);
   if (col < 2 || col > L.w - 3) col = Math.floor((G.cam + rand(80, W - 80)) / T);
   if (col <= 9 || (L.flagX > 0 && Math.abs(col - L.cpCol) <= 3)) return false;
@@ -838,7 +911,7 @@ function update(dt) {
   // play / clear both simulate the world so the celebration looks alive
   if (G.state === 'play') G.time += dt;
   for (const p of G.p) updatePlayer(p, dt);
-  spawnHorde(dt);
+  spawnHorde(dt); updateGates(dt);
   for (const m of G.lvl.mobs) if (!m.dead) updateMob(m, dt);
   G.lvl.mobs = G.lvl.mobs.filter(m => !m.dead);
   updateProj(dt); updateItems(dt);
@@ -850,10 +923,23 @@ function update(dt) {
   // checkpoint
   if (!G.cp && G.lvl.flagX > 0 && alive().some(p => p.x / T > G.lvl.cpCol)) { G.cp = G.lvl.cpCol; banner('CHECKPOINT', 1.2); SFX.coin(); }
   // camera follows the players' midpoint
-  const live = alive(), focus = live.length ? live : G.p;
-  const tx = focus.reduce((s, p) => s + midX(p), 0) / focus.length - W / 2 + 60;
-  G.cam += (clamp(tx, 0, G.lvl.w * T - W) - G.cam) * Math.min(1, dt * 6);
-  G.cam = clamp(G.cam, 0, Math.max(0, G.lvl.w * T - W));
+  // SPLIT SCREEN: when co-op players drift apart, each gets their own half of the screen
+  const live = alive(), focus = live.length ? live : G.p, maxCam = Math.max(0, G.lvl.w * T - W);
+  if (live.length === 2 && G.lvl.w * T > W * 1.2) {
+    const d = Math.abs(midX(live[0]) - midX(live[1]));
+    if (!G.split && d > 720) { G.split = true; G.cams = null; } else if (G.split && d < 540) G.split = false;
+  } else G.split = false;
+  if (G.split) {
+    const order = [...live].sort((a, b) => midX(a) - midX(b)), maxH = Math.max(0, G.lvl.w * T - W / 2);
+    const tgt = order.map(p => clamp(midX(p) - W / 4, 0, maxH));
+    if (!G.cams) G.cams = tgt.slice();
+    G.cams = G.cams.map((c, i) => c + (tgt[i] - c) * Math.min(1, dt * 8));
+    G.cam = G.cams[0]; G.viewL = G.cams[0]; G.viewR = G.cams[1] + W / 2;
+  } else {
+    const tx = focus.reduce((s, p) => s + midX(p), 0) / focus.length - W / 2 + (focus.length > 1 ? 0 : 60);
+    G.cam += (clamp(tx, 0, maxCam) - G.cam) * Math.min(1, dt * 6); G.cam = clamp(G.cam, 0, maxCam);
+    G.viewL = G.cam; G.viewR = G.cam + W;
+  }
   // flow
   if (G.state === 'clear') {
     G.timer -= dt;
@@ -893,6 +979,12 @@ function makeTile(c) {
     px(0, T - 2, T, 2, '#5a3510'); px(T - 2, 0, 2, T, '#5a3510');
     g.fillStyle = '#5a3510'; [[3, 3], [T - 6, 3], [3, T - 6], [T - 6, T - 6]].forEach(([x, y]) => g.fillRect(x, y, 3, 3));
     if (c === '?') { g.fillStyle = '#fff6d0'; g.font = 'bold 20px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', 16, 17); }
+  } else if (c === 'L') {
+    px(0, 0, T, T, '#7a4a1f'); px(2, 0, 2, T, '#5a3510'); px(T - 4, 0, 2, T, '#5a3510'); px(0, 14, T, 3, '#5a3510');
+    px(12, 8, 8, 8, '#ffd84a'); px(15, 11, 2, 4, '#3a2210');
+  } else if (c === 'W') {
+    px(0, 0, T, T, '#2a2a33'); for (let x = 3; x < T; x += 9) { px(x, 0, 4, T, '#8a8a99'); px(x, 0, 1, T, '#b8b8c8'); }
+    px(0, 12, T, 4, '#6a6a78'); px(0, 12, T, 1, '#b8b8c8');
   } else if (c === 'T') {
     px(0, 0, T, T, '#2f9e44'); px(4, 0, 6, T, '#69db7c'); px(T - 6, 0, 4, T, '#1b6e2e');
   }
@@ -1020,6 +1112,11 @@ function drawMob(m, x, y) {
 }
 function drawItem(it, x, y) {
   const bob = Math.sin(it.t * 4 + it.x) * 2;
+  if (it.kind === 'key') {
+    cx.shadowColor = '#ffd84a'; cx.shadowBlur = 14;
+    rect(x, y + bob, 10, 10, '#ffd84a'); rect(x + 3, y + 3 + bob, 4, 4, '#a07800'); rect(x + 10, y + 4 + bob, 10, 3, '#ffd84a'); rect(x + 16, y + 7 + bob, 3, 4, '#ffd84a');
+    cx.shadowBlur = 0; return;
+  }
   if (it.kind === 'coin') { const sq = Math.abs(Math.cos(it.t * 3 + it.x)); rect(x + 8 - 6 * sq, y + bob, 12 * sq + 2, 18, '#ffd84a'); rect(x + 8 - 3 * sq, y + 3 + bob, 6 * sq + 1, 12, '#e0a800'); }
   else if (it.kind === 'shield') {
     cx.shadowColor = '#bfe3ff'; cx.shadowBlur = 12;
@@ -1100,6 +1197,18 @@ function drawWorld() {
     rect(bx, 12 * T, 6, 3 * T, '#6b4a2a'); rect(bx - 5, 12 * T - 14, 16, 14, lit ? '#ffd84a' : '#777');
     if (lit) { cx.globalAlpha = 0.3 + 0.2 * Math.sin(performance.now() / 150); rect(bx - 9, 12 * T - 18, 24, 22, '#fff6a0'); cx.globalAlpha = 1; }
   }
+  for (const gt of L.gates) {
+    if (gt.type === 'plates') gt.plates.forEach((pl, i) => { const on = gt.on[i]; rect(pl.x - 2, pl.y + 4, 28, 2, '#555'); rect(pl.x, pl.y + (on ? 3 : 0), 24, on ? 3 : 6, on ? '#7fd650' : '#d0a020'); });
+    else gt.levers.forEach(lv => {
+      rect(lv.x + 2, lv.y + 26, 12, 4, '#555');
+      cx.save(); cx.translate(lv.x + 8, lv.y + 26); cx.rotate(lv.t > 0 ? 0.7 : -0.7); rect(-2, -20, 4, 20, '#9a9a9a'); rect(-4, -24, 8, 6, lv.t > 0 ? '#7fd650' : '#e53935'); cx.restore();
+      if (lv.t > 0) rect(lv.x - 4, lv.y - 10, 24 * lv.t, 4, '#ffd84a');
+    });
+    if (!gt.open) {
+      text(gt.type === 'plates' ? 'TEAM GATE: BOTH STAND ON A PLATE' : 'TEAM GATE: HIT BOTH LEVERS WITHIN 1s', gt.col * T - 150, 5 * T, 13, '#ffd84a', 'center');
+      text('tip: jump on your partner + hold jump = TEAM BOOST', gt.col * T - 150, 5 * T + 20, 10, '#7fe0ff', 'center');
+    }
+  }
   for (const it of L.items) drawItem(it, it.x, it.y);
   for (const m of L.mobs) if (m.x + m.w > G.cam - 60 && m.x < G.cam + W + 60) drawMob(m, m.x, m.y);
   for (const p of G.p) if (!p.dead) drawHero(p, p.x, p.y);
@@ -1138,7 +1247,7 @@ function drawHUD() {
   });
   const cxm = W / 2;
   text(`${MAPS[G.map].name} ${G.li + 1}/${MAPS[G.map].levels.length}   ${G.diff.name}`, cxm, 16, 12, G.diff.crazy ? `hsl(${(performance.now() / 4) % 360},100%,65%)` : '#fff', 'center');
-  text(`COINS ${G.coins}   LIVES ${G.lives}   SWORD ${SWORDS[G.sword].n}   ${fmtTime(G.time)}`, cxm, 36, 13, '#ffd84a', 'center');
+  text(`${G.lvl.doors.length ? 'KEYS ' + G.keys + '   ' : ''}COINS ${G.coins}   LIVES ${G.lives}   SWORD ${SWORDS[G.sword].n}   ${fmtTime(G.time)}`, cxm, 36, 13, '#ffd84a', 'center');
   const boss = G.lvl.mobs.find(m => m.type === 'boss' || m.type === 'dragon');
   if (boss) {
     const crystals = G.lvl.mobs.filter(m => m.type === 'crystal').length;
@@ -1188,12 +1297,13 @@ function drawMaps() {
     text('MAP DIFFICULTY: ' + m.tier, x + w / 2, y + 96, 12, '#fff', 'center');
     text(m.desc[0], x + w / 2, y + 130, 12, '#eee', 'center'); text(m.desc[1], x + w / 2, y + 150, 12, '#eee', 'center');
     text('Starts with ' + SWORDS[m.sword].n + ' sword', x + w / 2, y + 172, 11, '#bbb', 'center');
+    text('Inspired by:', x + w / 2, y + 190, 10, '#ffd84a', 'center'); text(m.insp, x + w / 2, y + 204, 10, '#ffe9a0', 'center');
     const best = store.get('bb_best_' + i + '_' + DKEYS[G.diffIdx], null);
     if (best != null) text('BEST ' + fmtTime(best), x + w / 2, y + h - 14, 12, '#111', 'center');
   });
   panel(W / 2 - 330, 345, 660, 160);
   text(`PLAYERS:   ${G.players === 1 ? '[ 1 PLAYER ]   2 PLAYERS' : '  1 PLAYER   [ 2 PLAYERS ]'}`, W / 2, 380, 18, '#fff', 'center');
-  text('press 1 or 2', W / 2, 398, 11, '#aaa', 'center');
+  text(G.players === 2 ? '2P: split screen, TEAM GATES (plates + timed levers), TEAM BOOST jumps' : 'press 1 or 2', W / 2, 398, 11, G.players === 2 ? '#7fe0ff' : '#aaa', 'center');
   const dk = DKEYS[G.diffIdx], dcol = { easy: '#7fd650', normal: '#fff', hard: '#ff6b6b', crazy: `hsl(${(t * 300) % 360},100%,65%)` }[dk];
   text(`MODE:   ▲ ${DIFF[dk].name} ▼`, W / 2, 432, 18, dcol, 'center');
   text(dk === 'crazy' ? 'Guns, sticky bombs, 9 lives and a 15-mob horde. Total chaos.' : dk === 'hard' ? 'Faster mobs, 2 lives, shields spawn damaged.' : dk === 'easy' ? '5 lives, slower mobs.' : '3 lives. The intended experience.', W / 2, 452, 12, '#ccc', 'center');
@@ -1214,7 +1324,15 @@ function drawShop() {
 function render() {
   if (G.state === 'title') { drawTitle(); return; }
   if (G.state === 'maps') { drawMaps(); return; }
-  drawBackground(); drawWorld(); drawHUD();
+  if (G.split && G.cams) {
+    const save = G.cam;
+    for (let i = 0; i < 2; i++) {
+      cx.save(); cx.beginPath(); cx.rect(i * W / 2, 0, W / 2, H); cx.clip(); cx.translate(i * W / 2, 0);
+      G.cam = G.cams[i]; drawBackground(); drawWorld(); cx.restore();
+    }
+    G.cam = save; rect(W / 2 - 3, 0, 6, H, '#111'); rect(W / 2 - 1, 0, 2, H, '#ffd84a');
+  } else { drawBackground(); drawWorld(); }
+  drawHUD();
   if (G.state === 'pause') { panel(W / 2 - 180, 200, 360, 130); text('PAUSED', W / 2, 250, 32, '#ffd84a', 'center'); text('P / Esc resume   Q quit', W / 2, 295, 14, '#fff', 'center'); }
   if (G.state === 'shop') drawShop();
   if (G.state === 'over') { panel(W / 2 - 220, 190, 440, 150); text('GAME OVER', W / 2, 245, 40, '#ff3b3b', 'center'); text('Press Enter for title', W / 2, 300, 14, '#fff', 'center'); }

@@ -67,6 +67,22 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 54 | Test-only hook (`window.__bb`) left in the build | Removed before commit | ✅ |
 | 55 | Game auto-pauses when the tab is hidden (looked like "stuck" during testing) | Intended. The game resumes with P/Esc | 🛡️ |
 
+## Round 3 of building: co-op, rooms and keys
+
+| # | Flaw | Fix | Status |
+|---|---|---|---|
+| 57 | **Co-op players were pulled along when walking opposite ways** (screen-edge clamp), reported by playtester | Removed the clamp. Added **split screen** that switches on when players are more than 720 px apart and merges below 540 px (hysteresis, so no flicker). Each half follows its player | ✅ tested |
+| 58 | Mobs and projectiles were culled using the single camera (broke in split view) | Activation, culling and horde spawning use the union of both views (`viewL`/`viewR`) | ✅ |
+| 59 | Split screen in a one-screen boss arena is pointless | Only splits when the level is wider than 1.2 screens | 🛡️ |
+| 60 | 2P needed real teamwork | **Team gates**: pressure plates (both must stand at once, one plate up on a ledge) and **timed levers** (both hit within 1 s; spaced so one player can't do both). Plus a **team boost**: land on your partner while holding jump for a 9-block jump | ✅ tested |
+| 61 | Team gate soft-lock if your partner is out of lives | Gates auto-unlock when fewer than 2 players are still in the game | 🛡️ |
+| 62 | Creepers could destroy the pressure-plate ledge | Gate areas use indestructible reinforced ground | 🛡️ |
+| 63 | Levels felt short | Levels now 230/270 (Overworld) and 250 (Nether) blocks long | ✅ |
+| 64 | **Keys and locked doors**: a key room could dead-end the path | Rooms are corridors (open at both ends) and the key sits on the floor on the main path, so it can't be missed or lost | ✅ tested |
+| 65 | Door without a key | Stays shut and shows "LOCKED! FIND THE KEY" (rate-limited message). With a key it opens and uses the key | ✅ tested |
+| 66 | Difficulty selection "didn't work" | The playtester was on a stale tab of the old build; the new world screen uses ↑/↓ for mode (tested). Hard-refresh to update | ✅ tested |
+| 67 | Unwalkable terrain check | Automated scan of all levels: no 5-high walls on the path except the climbable finale staircase; max pit 3 blocks (jump covers about 5) | ✅ tested |
+
 ## Known limitations (honest list)
 
 | # | Limitation | Status |

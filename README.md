@@ -25,15 +25,17 @@ P / Esc to pause · M to mute. On the **world select screen**: ← / → world, 
 
 ## Worlds
 
-| World | Difficulty | What's there |
-|---|---|---|
-| Overworld | ★☆☆ Easy | 2 levels + the Ghost Miner boss. Zombies, creepers, skeletons |
-| The Nether | ★★☆ Medium | Lava pits, lava-fall background, ghasts (swing to send fireballs back), blazes |
-| The End | ★★★ Hard | The Ender Dragon circles, breathes and swoops. Smash the 3 end crystals that heal it |
+| World | Difficulty | Inspired by | What's there |
+|---|---|---|---|
+| Overworld | ★☆☆ Easy | Super Mario Bros. World 1-1 × Minecraft Overworld | 2 long levels + the Ghost Miner boss. Zombies, creepers, skeletons |
+| The Nether | ★★☆ Medium | Mario lava castles × Minecraft Nether | Lava pits, lava-fall background, ghasts (swing to send fireballs back), blazes |
+| The End | ★★★ Hard | Mario boss battles × Minecraft The End | The Ender Dragon circles, breathes and swoops. Smash the 3 end crystals that heal it |
+
+Every level has **key rooms**: grab the key inside to unlock the door further on.
 
 ## Modes
 
-Easy · Normal · Hard (shields spawn damaged) · **CRAZY**: automatic gun, sticky bombs, 9 lives and a horde of up to 15 mobs spawning nonstop.
+Easy · Normal · Hard (shields spawn damaged) · **CRAZY** (inspired by GTA-style chaos): automatic gun, sticky bombs, 9 lives and a horde of up to 15 mobs spawning nonstop.
 
 ## Features
 
@@ -44,7 +46,7 @@ Easy · Normal · Hard (shields spawn damaged) · **CRAZY**: automatic gun, stic
 - **Rare shields** in hard-to-reach spots. Hold to block. 100 durability: arrows −34 (3 break it), zombies −15, creepers −60. On **Hard**, shields spawn pre-damaged (5–40%).
 - **Power-ups** from ? blocks: Mushroom (grow big; a hit shrinks you instead of costing a heart), Fire flower (fireballs), Star (invincible, kills on touch).
 - **Stomp** mobs from above. Stomping a creeper lights its fuse, so run!
-- **2-player co-op** on one keyboard: shared lives, respawn next to your partner.
+- **2-player co-op** on one keyboard: shared lives, respawn next to your partner, **split screen** when you drift apart, **team gates** (stand on both plates together / hit both levers within 1 second) and **team boost** (land on your partner's head while holding jump).
 - **Boss: the Ghost Miner** teleports, fires orbs, and summons mobs, over 3 phases.
 - Easy / Normal / Hard, checkpoint with indestructible pads, best time saved.
 
