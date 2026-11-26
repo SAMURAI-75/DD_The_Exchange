@@ -110,6 +110,13 @@ Status key: ✅ fixed and tested · 🛡️ handled by design · ⚠️ known li
 | 83 | **Control settings**: swap WASD / arrows | Press C on the world screen; saved in localStorage. The title-screen controls guide updates to match | ✅ tested |
 | 84 | Menu didn't explain controls | Title screen now has a full controls table: move, jump, crouch, sword, shield, fire/gun, bomb, with hints | ✅ |
 
+## Round 6: sound bug
+
+| # | Flaw | Fix | Status |
+|---|---|---|---|
+| 87 | **Sound overlapping, and still playing with SOUND OFF**, reported by playtester. Cause: several copies of the game open at once (old tabs, test pane); muting one didn't silence the others, and queued notes kept playing for a moment | All audio now goes through one **master gain**: M sets it to 0 instantly, cutting notes already queued. The audio context is **suspended whenever the tab is hidden or loses focus**, so background copies are silent, and it resumes on the next key press. The music scheduler also stops while hidden. Tested: M toggles and persists, no errors | ✅ tested |
+| 88 | Heavy action (gun + explosions + horde) stacking dozens of sounds into noise | At most 24 sounds play at once; extra sound requests are dropped | 🛡️ |
+
 ## Known limitations (honest list)
 
 | # | Limitation | Status |

@@ -24,12 +24,25 @@ const store = {
 };
 
 // ---------- audio (generated) ----------
-let ac = null, muted = !!store.get('bb_muted', false);
+// Every sound goes through one master gain: muting sets it to 0 instantly, cutting notes already queued.
+let ac = null, master = null, voices = 0, muted = !!store.get('bb_muted', false);
+const MAX_VOICES = 24; // cap simultaneous sounds so heavy action never turns into noise
 function audio() {
-  if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { ac = null; } }
-  if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
+  if (!ac) {
+    try {
+      ac = new (window.AudioContext || window.webkitAudioContext)();
+      master = ac.createGain(); master.gain.value = muted ? 0 : 1; master.connect(ac.destination);
+    } catch (e) { ac = null; master = null; }
+  }
+  if (ac && ac.state === 'suspended' && !document.hidden) ac.resume().catch(() => {});
   return ac;
 }
+function setMuted(v) {
+  muted = v; store.set('bb_muted', v);
+  if (ac && master) { master.gain.cancelScheduledValues(ac.currentTime); master.gain.setValueAtTime(v ? 0 : 1, ac.currentTime); }
+}
+// silence this copy of the game when its tab is hidden or loses focus (stops overlap between tabs)
+function audioSleep() { if (ac && ac.state === 'running') ac.suspend().catch(() => {}); }
 function tone(f, d, type = 'square', vol = 0.06, slide = 0, delay = 0) {
   if (muted) return; const a = audio(); if (!a) return;
   try {
@@ -37,7 +50,9 @@ function tone(f, d, type = 'square', vol = 0.06, slide = 0, delay = 0) {
     o.type = type; o.frequency.setValueAtTime(f, t0);
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t0 + d);
     g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
-    o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + d + 0.02);
+    if (voices >= MAX_VOICES) return;
+    voices++; o.onended = () => { voices--; };
+    o.connect(g).connect(master); o.start(t0); o.stop(t0 + d + 0.02);
   } catch (e) { /* ignore */ }
 }
 function noise(d, vol = 0.25, freq = 800) {
@@ -47,7 +62,9 @@ function noise(d, vol = 0.25, freq = 800) {
     for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
     const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
     s.buffer = buf; f.type = 'lowpass'; f.frequency.value = freq; g.gain.value = vol;
-    s.connect(f).connect(g).connect(a.destination); s.start();
+    if (voices >= MAX_VOICES) return;
+    voices++; s.onended = () => { voices--; };
+    s.connect(f).connect(g).connect(master); s.start();
   } catch (e) { /* ignore */ }
 }
 const SFX = {
@@ -97,7 +114,7 @@ const SONGS = {
 const music = { song: null, step: 0, next: 0 };
 function setSong(name) { if (music.song === name) return; music.song = name; music.step = 0; music.next = 0; }
 setInterval(() => {
-  if (muted || !ac || !music.song || ac.state !== 'running') return;
+  if (muted || !ac || !music.song || ac.state !== 'running' || document.hidden) return;
   const s = SONGS[music.song], dur = 60 / s.bpm / 2;
   if (music.next < ac.currentTime) music.next = ac.currentTime + 0.05;
   while (music.next < ac.currentTime + 0.15) {
@@ -118,9 +135,10 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 function releaseAll() { for (const k in keys) keys[k] = false; for (const k in pressed) delete pressed[k]; }
-function autoPause() { releaseAll(); if (G.state === 'play') G.state = 'pause'; }
+function autoPause() { releaseAll(); audioSleep(); if (G.state === 'play') G.state = 'pause'; }
 addEventListener('blur', autoPause);
-document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+addEventListener('focus', () => { if (ac) audio(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); else if (ac && document.hasFocus()) audio(); });
 const hit1 = (...codes) => codes.some(c => pressed[c]);
 // Two key schemes. Settings can swap which player uses which (G.swap).
 const CTRL = [
@@ -1006,7 +1024,7 @@ function trySpawn() {
   return true;
 }
 function update(dt) {
-  if (hit1('KeyM')) { muted = !muted; store.set('bb_muted', muted); }
+  if (hit1('KeyM')) setMuted(!muted);
   if (G.msg) { G.msg.t -= dt; if (G.msg.t <= 0) G.msg = null; }
   setSong(G.state === 'title' || G.state === 'maps' ? 'title' : G.state === 'win' || G.state === 'results' ? 'win' : G.state === 'over' ? null
     : G.lvl ? { over: 'over', night: 'boss', nether: 'nether', end: 'end', cave: 'cave' }[G.lvl.theme] : 'title');
